@@ -1,0 +1,2488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Madhav Apartments — Society App</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root { --primary:#1e40af; --primary-light:#3b82f6; }
+  body  { font-family:'Segoe UI',Arial,sans-serif; background:#f1f5f9; overflow-x:hidden; }
+  main  { overflow-x:hidden; }
+  .tab-btn { transition:.15s; border:none; background:none; cursor:pointer; }
+  .tab-btn.active { background:var(--primary); color:#fff; }
+  .tab-btn:not(.active):hover { background:#e2e8f0; }
+  .card { background:#fff; border-radius:12px; box-shadow:0 1px 4px rgba(0,0,0,.1); padding:20px; }
+  table { border-collapse:collapse; width:100%; }
+  th  { background:#1e40af; color:#fff; padding:8px 12px; text-align:left; font-size:.8rem; white-space:nowrap; }
+  td  { padding:7px 12px; border-bottom:1px solid #e2e8f0; font-size:.85rem; }
+  tr:hover td { background:#f8fafc; }
+  .badge-paid    { background:#dcfce7; color:#15803d; border-radius:99px; padding:2px 10px; font-size:.75rem; font-weight:600; }
+  .badge-pending { background:#fee2e2; color:#dc2626; border-radius:99px; padding:2px 10px; font-size:.75rem; font-weight:600; }
+  .badge-open    { background:#dcfce7; color:#15803d; border-radius:99px; padding:2px 10px; font-size:.75rem; font-weight:600; }
+  .badge-closed  { background:#f1f5f9; color:#64748b; border-radius:99px; padding:2px 10px; font-size:.75rem; font-weight:600; }
+  .modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;display:flex;align-items:center;justify-content:center; }
+  .modal-box { background:#fff;border-radius:14px;padding:28px;width:500px;max-width:96vw;max-height:92vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.25); }
+  input,select,textarea { width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:.88rem;box-sizing:border-box; }
+  input:focus,select:focus,textarea:focus { outline:2px solid var(--primary-light);border-color:transparent; }
+  textarea { resize:vertical; font-family:inherit; }
+  .btn  { padding:8px 20px;border-radius:7px;font-weight:600;font-size:.88rem;cursor:pointer;border:none; }
+  .btn-primary   { background:var(--primary);color:#fff; }
+  .btn-primary:hover { background:#1e3a8a; }
+  .btn-danger    { background:#dc2626;color:#fff;padding:5px 12px;font-size:.78rem;border-radius:6px;cursor:pointer;border:none; }
+  .btn-secondary { background:#f1f5f9;color:#1e40af;border:1px solid #cbd5e1; }
+  .spinner { border:3px solid #e2e8f0;border-top-color:var(--primary);border-radius:50%;width:34px;height:34px;animation:spin .7s linear infinite;display:inline-block; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .stat { border-radius:12px;padding:18px 20px;color:#fff; }
+  .stat.blue   { background:linear-gradient(135deg,#1e40af,#3b82f6); }
+  .stat.green  { background:linear-gradient(135deg,#15803d,#22c55e); }
+  .stat.orange { background:linear-gradient(135deg,#b45309,#f59e0b); }
+  .stat.red    { background:linear-gradient(135deg,#dc2626,#f87171); }
+  .stat.teal   { background:linear-gradient(135deg,#0f766e,#14b8a6); }
+  .section { display:none; }
+  .section.active { display:block; }
+  #toast { position:fixed;bottom:22px;right:22px;padding:11px 18px;border-radius:9px;color:#fff;font-size:.86rem;z-index:9999;display:none;box-shadow:0 4px 16px rgba(0,0,0,.25); }
+  label.lbl { display:block;font-size:.82rem;font-weight:600;color:#374151;margin-bottom:4px; }
+  .grid2 { display:grid;grid-template-columns:1fr 1fr;gap:12px; }
+  @media(max-width:520px){
+    .grid2{grid-template-columns:1fr}
+    .sm-hide{display:none}
+    .card{padding:14px 12px}
+    .stat{padding:14px 16px}
+    .modal-box{padding:20px 16px}
+    th,td{padding:6px 8px;font-size:.78rem}
+    .btn{padding:7px 14px;font-size:.82rem}
+  }
+  /* Mobile tab nav — scrollable, no visible scrollbar */
+  nav { -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+  nav::-webkit-scrollbar { display:none; }
+  /* Mobile header — shrink on small screens */
+  @media(max-width:480px){
+    #headerTitle { font-size:.82rem !important; }
+    #headerSub   { display:none; }
+    #roleSelect  { max-width:130px; font-size:.72rem !important; }
+    .tab-btn     { padding:9px 10px !important; font-size:.78rem !important; }
+  }
+  body.readonly .rw { display:none!important }
+  body.readonly #roleSelect { display:none!important }
+  body.readonly #viewerBadge { display:inline-flex!important }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<header style="background:linear-gradient(90deg,#1e40af,#2563eb);color:#fff;padding:0 14px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.3);min-height:52px;gap:8px">
+  <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1">
+    <div style="width:32px;height:32px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;color:#1e40af;font-size:.9rem;flex-shrink:0">M</div>
+    <div style="min-width:0">
+      <div id="headerTitle" style="font-weight:700;font-size:.9rem;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Madhav Apartments Condominium</div>
+      <div id="headerSub" style="font-size:.68rem;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Society Management — FY <span id="fyLabel"></span> &nbsp;|&nbsp; <span id="lastSavedLabel" style="opacity:.75"></span></div>
+    </div>
+  </div>
+  <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+    <select id="roleSelect" onchange="setRole(this.value)" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:4px 6px;font-size:.72rem;max-width:140px">
+      <option style="color:#000;background:#fff" value="Treasurer">Ameya Pathade (Treasurer)</option>
+      <option style="color:#000;background:#fff" value="Secretary">Satyajit Kulkarni (Secretary)</option>
+      <option style="color:#000;background:#fff" value="Chairman">Dr. Mukund Bodhankar (Chairman)</option>
+    </select>
+    <span id="viewerBadge" style="display:none;align-items:center;gap:4px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);border-radius:6px;padding:4px 8px;font-size:.72rem;font-weight:600;white-space:nowrap">👁 View Only</span>
+    <button onclick="showSettings()" class="btn btn-secondary" style="padding:5px 10px;font-size:.75rem;white-space:nowrap;flex-shrink:0">⚙ Setup</button>
+  </div>
+</header>
+
+<!-- TAB NAV -->
+<nav style="background:#fff;border-bottom:2px solid #e2e8f0;padding:0 16px;display:flex;gap:2px;overflow-x:auto">
+  <button class="tab-btn active" data-tab="dashboard" onclick="switchTab('dashboard')" style="padding:11px 16px;border-radius:6px 6px 0 0;font-size:.86rem;font-weight:600;white-space:nowrap">🏠 Dashboard</button>
+  <button class="tab-btn" data-tab="expenses" onclick="switchTab('expenses')" style="padding:11px 16px;border-radius:6px 6px 0 0;font-size:.86rem;font-weight:600;white-space:nowrap">📋 Expenses</button>
+  <button class="tab-btn" data-tab="fds" onclick="switchTab('fds')" style="padding:11px 16px;border-radius:6px 6px 0 0;font-size:.86rem;font-weight:600;white-space:nowrap">🏦 FD Tracker</button>
+  <button class="tab-btn" data-tab="banks" onclick="switchTab('banks')" style="padding:11px 16px;border-radius:6px 6px 0 0;font-size:.86rem;font-weight:600;white-space:nowrap">💳 Bank & Cash</button>
+  <button class="tab-btn" data-tab="members" onclick="switchTab('members')" style="padding:11px 16px;border-radius:6px 6px 0 0;font-size:.86rem;font-weight:600;white-space:nowrap">👤 Members</button>
+  <button class="tab-btn" data-tab="maintenance" onclick="switchTab('maintenance')" style="padding:11px 16px;border-radius:6px 6px 0 0;font-size:.86rem;font-weight:600;white-space:nowrap">🔧 Maintenance</button>
+  <button class="tab-btn" data-tab="notes" onclick="switchTab('notes')" style="padding:11px 16px;border-radius:6px 6px 0 0;font-size:.86rem;font-weight:600;white-space:nowrap">📝 Notes</button>
+  <button class="tab-btn" data-tab="income" onclick="switchTab('income')" style="padding:11px 16px;border-radius:6px 6px 0 0;font-size:.86rem;font-weight:600;white-space:nowrap">💰 Income</button>
+  <button class="tab-btn" data-tab="committee" onclick="switchTab('committee')" style="padding:11px 16px;border-radius:6px 6px 0 0;font-size:.86rem;font-weight:600;white-space:nowrap">🏛 Committee</button>
+  <button class="tab-btn" data-tab="contacts" onclick="switchTab('contacts')" style="padding:11px 16px;border-radius:6px 6px 0 0;font-size:.86rem;font-weight:600;white-space:nowrap">📞 Contacts</button>
+</nav>
+
+<!-- MAIN -->
+<main style="max-width:1300px;margin:0 auto;padding:18px 16px">
+
+  <!-- DASHBOARD -->
+  <div id="sec-dashboard" class="section active">
+    <div id="dashContent"><div style="text-align:center;padding:60px"><div class="spinner"></div></div></div>
+  </div>
+
+  <!-- EXPENSES -->
+  <div id="sec-expenses" class="section">
+    <div class="card" style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <label style="font-weight:600;font-size:.86rem">Month:</label>
+        <select id="expMonth" onchange="renderExpenses()" style="width:130px">
+          <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+          <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+          <option value="7">July</option><option value="8">August</option><option value="9">September</option>
+          <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+        </select>
+        <select id="expYear" onchange="renderExpenses()" style="width:88px"></select>
+        <select id="expCatFilter" onchange="renderExpenses()" style="width:150px;max-width:100%"><option value="">All Categories</option></select>
+        <button class="btn btn-primary rw" onclick="showExpenseModal()">+ Add Expense</button>
+        <button class="btn btn-secondary" onclick="loadFromBin(true)" style="margin-left:auto;font-size:.82rem">🔄</button>
+      </div>
+    </div>
+    <div id="expSummary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px"></div>
+    <div class="card" style="overflow-x:auto">
+      <table><thead><tr><th>Date</th><th class="sm-hide">Category</th><th class="sm-hide">Sub-Category</th><th class="sm-hide">Vendor</th><th class="sm-hide">Mode</th><th>Amount (₹)</th><th>Status</th><th class="sm-hide">Paid By</th><th class="sm-hide">Notes</th><th class="sm-hide">Added By</th><th>Act</th></tr></thead>
+      <tbody id="expTbody"></tbody></table>
+    </div>
+  </div>
+
+  <!-- FD TRACKER -->
+  <div id="sec-fds" class="section">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <h2 style="font-weight:700;font-size:1.05rem">Fixed Deposit Tracker</h2>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary rw" onclick="showFDModal()">+ Add FD</button>
+        <button class="btn btn-secondary" onclick="loadFromBin(true)" style="font-size:.82rem">🔄</button>
+      </div>
+    </div>
+    <div id="fdSummary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:14px"></div>
+    <div class="card" style="overflow-x:auto">
+      <table><thead><tr><th>Bank</th><th>FD No</th><th>Amount (₹)</th><th>Opened</th><th>Matures</th><th>ROI%</th><th>Maturity Val</th><th>Days Left</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody id="fdTbody"></tbody></table>
+    </div>
+  </div>
+
+  <!-- BANK & CASH -->
+  <div id="sec-banks" class="section">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <h2 style="font-weight:700;font-size:1.05rem">Bank Accounts & Cash</h2>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary rw" onclick="showBankModal()">+ Add / Update Bank</button>
+        <button class="btn btn-secondary" onclick="loadFromBin(true)" style="font-size:.82rem">🔄</button>
+      </div>
+    </div>
+    <div id="bankSummary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:14px"></div>
+    <div class="card">
+      <table><thead><tr><th>Bank</th><th>Account No</th><th>Balance (₹)</th><th>As On</th><th>Notes</th><th>Edit</th></tr></thead>
+      <tbody id="bankTbody"></tbody></table>
+    </div>
+
+    <!-- Society Funds -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:22px 0 12px;flex-wrap:wrap;gap:8px">
+      <h2 style="font-weight:700;font-size:1.05rem;margin:0">🏛 Society Funds</h2>
+      <button class="btn btn-primary rw" onclick="showFundModal()">+ Add / Update Fund</button>
+    </div>
+    <div id="fundSummary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:14px"></div>
+    <div class="card">
+      <table><thead><tr><th>Fund Name</th><th>Category</th><th>Amount (₹)</th><th>As On</th><th>Notes</th><th>Act</th></tr></thead>
+      <tbody id="fundTbody"></tbody></table>
+    </div>
+
+    <!-- Fixed Assets -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:22px 0 12px;flex-wrap:wrap;gap:8px">
+      <h2 style="font-weight:700;font-size:1.05rem;margin:0">🏗 Fixed Assets & Deposits</h2>
+      <button class="btn btn-primary rw" onclick="showAssetModal()">+ Add / Update Asset</button>
+    </div>
+    <div id="assetSummary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:14px"></div>
+    <div class="card">
+      <table><thead><tr><th>Asset</th><th>Book Value (₹)</th><th>As On</th><th>Notes</th><th>Act</th></tr></thead>
+      <tbody id="assetTbody"></tbody></table>
+    </div>
+  </div>
+
+  <!-- MEMBERS -->
+  <div id="sec-members" class="section">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <h2 style="font-weight:700;font-size:1.05rem">Member Directory</h2>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="text" id="memberSearch" placeholder="Search…" oninput="renderMembers()" style="width:160px">
+        <button class="btn btn-primary rw" onclick="showMemberModal()">+ Add Member</button>
+      </div>
+    </div>
+    <div class="card">
+      <table><thead><tr><th>Unit No</th><th>Owner Name</th><th>Phone</th><th class="sm-hide">Email</th><th>Actions</th></tr></thead>
+      <tbody id="memberTbody"></tbody></table>
+    </div>
+  </div>
+
+  <!-- MAINTENANCE -->
+  <div id="sec-maintenance" class="section">
+    <div class="card" style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <label style="font-weight:600;font-size:.86rem">Month:</label>
+        <select id="maintMonth" onchange="renderMaintenance()" style="width:130px">
+          <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+          <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+          <option value="7">July</option><option value="8">August</option><option value="9">September</option>
+          <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+        </select>
+        <select id="maintYear" onchange="renderMaintenance()" style="width:88px"></select>
+        <input type="text" id="maintSearch" placeholder="Search flat / name…" oninput="renderMaintenance()" style="width:160px">
+        <button class="btn btn-primary" onclick="loadFromBin(true)" style="margin-left:auto;padding:6px 14px;font-size:.82rem">🔄 Refresh</button>
+      </div>
+    </div>
+    <div id="maintSummary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:14px"></div>
+    <div class="card" style="overflow-x:auto">
+      <table><thead><tr><th>#</th><th>Unit</th><th>Owner</th><th>Maint. (₹)</th><th>Prior Dues (₹)</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody id="maintTbody"></tbody></table>
+    </div>
+  </div>
+
+  <!-- NOTES -->
+  <div id="sec-notes" class="section">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <h2 style="font-weight:700;font-size:1.05rem">Committee Notes</h2>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary rw" onclick="showNoteModal()">+ Add Note</button>
+        <button class="btn btn-secondary" onclick="loadFromBin(true)" style="font-size:.82rem">🔄</button>
+      </div>
+    </div>
+    <div id="notesList"></div>
+  </div>
+
+  <!-- INCOME -->
+  <div id="sec-income" class="section">
+    <div class="card" style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <label style="font-weight:600;font-size:.86rem">Month:</label>
+        <select id="incMonth" onchange="renderIncome()" style="width:130px">
+          <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+          <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+          <option value="7">July</option><option value="8">August</option><option value="9">September</option>
+          <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+        </select>
+        <select id="incYear" onchange="renderIncome()" style="width:88px"></select>
+        <select id="incCatFilter" onchange="renderIncome()" style="width:180px"><option value="">All Categories</option></select>
+        <button class="btn btn-primary rw" onclick="showIncomeModal()">+ Add Income</button>
+        <button class="btn btn-secondary" onclick="loadFromBin(true)" style="margin-left:auto;font-size:.82rem">🔄</button>
+      </div>
+    </div>
+    <div id="incSummary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:14px"></div>
+    <div class="card" style="overflow-x:auto">
+      <table><thead><tr><th>Date</th><th>Category</th><th>Sub-Category</th><th>Amount (₹)</th><th class="sm-hide">Notes</th><th>Added By</th><th>Act</th></tr></thead>
+      <tbody id="incTbody"></tbody></table>
+    </div>
+  </div>
+
+  <div id="sec-committee" class="section">
+    <div class="card" style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <h3 style="margin:0;font-size:1rem;font-weight:700">🏛 Committee Members</h3>
+        <button class="btn btn-primary rw" onclick="showCommMemberModal()" style="margin-left:auto">+ Add Member</button>
+        <button class="btn btn-secondary" onclick="loadFromBin(true)" style="font-size:.82rem">🔄</button>
+      </div>
+    </div>
+    <div id="commMemberGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:20px"></div>
+
+    <div class="card" style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <h3 style="margin:0;font-size:1rem;font-weight:700">📋 Sub-Committee Responsibilities</h3>
+        <button class="btn btn-primary rw" onclick="showCommRespModal()" style="margin-left:auto">+ Add Responsibility</button>
+      </div>
+    </div>
+    <div class="card" style="overflow-x:auto">
+      <table><thead><tr><th>Task / Area</th><th>Primary Person</th><th>Secondary Person</th><th>Act</th></tr></thead>
+      <tbody id="commRespTbody"></tbody></table>
+    </div>
+
+    <div class="card" style="margin-top:20px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <h3 style="margin:0;font-size:1rem;font-weight:700">📌 Regular / Non-Regular Work Items</h3>
+        <span style="font-size:.78rem;color:#6b7280;font-style:italic">(not exhaustive)</span>
+        <button class="btn btn-primary rw" onclick="showCommWorkModal()" style="margin-left:auto">+ Add Item</button>
+      </div>
+    </div>
+    <div id="commWorkList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px"></div>
+  </div>
+
+  <div id="sec-contacts" class="section">
+    <div class="card" style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <h3 style="margin:0;font-size:1rem;font-weight:700">📞 Reference Contacts</h3>
+        <input id="contactSearch" type="text" placeholder="Search name, phone, service…" oninput="renderContacts()" style="flex:1;min-width:140px;padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:.85rem">
+        <button class="btn btn-primary rw" onclick="showContactModal()" style="margin-left:auto">+ Add Contact</button>
+        <button class="btn btn-secondary" onclick="loadFromBin(true)" style="font-size:.82rem">🔄</button>
+      </div>
+    </div>
+    <div id="contactsList"></div>
+  </div>
+
+</main>
+
+<div id="toast"></div>
+<div id="backupBanner" style="display:none;position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:#d97706;color:#fff;padding:12px 20px;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.3);z-index:1100;text-align:center;max-width:92vw;cursor:pointer" onclick="exportBackup();document.getElementById('backupBanner').style.display='none'">
+  💾 2-hour auto-backup due — <b>tap here to download</b>
+</div>
+<div id="saveBanner" style="display:none;position:fixed;top:56px;left:0;right:0;background:#dc2626;color:#fff;padding:10px 16px;text-align:center;font-size:.84rem;font-weight:600;z-index:1050;box-shadow:0 2px 8px rgba(0,0,0,.3)">
+  ⚠️ Data NOT saved to cloud — check internet / API key. Your changes are safe locally. <span onclick="document.getElementById('saveBanner').style.display='none'" style="cursor:pointer;margin-left:12px;opacity:.8">✕</span>
+</div>
+
+<!-- ═══ MODALS ═══ -->
+
+<!-- Settings / Setup -->
+<div id="mSettings" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <h3 style="font-weight:700;font-size:1.05rem;margin-bottom:4px">⚙️ App Setup</h3>
+    <p style="font-size:.82rem;color:#64748b;margin-bottom:16px">One-time setup using JSONBin.io (free). Takes 2 minutes.</p>
+
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px;margin-bottom:16px;font-size:.82rem;line-height:1.6">
+      <b>How to get the API Key:</b><br>
+      1. Go to <b>jsonbin.io</b> → Sign Up (free)<br>
+      2. Click your name (top-right) → <b>API Keys</b><br>
+      3. Copy the <b>Master Key</b> (starts with $2b$…)<br>
+      4. Paste it below and click <b>Create My Data Bin</b>
+    </div>
+
+    <label class="lbl">Master Key (from jsonbin.io)</label>
+    <input type="text" id="apiKeyInput" placeholder="$2a$10$ or $2b$10$..." style="margin-bottom:10px;font-family:monospace;font-size:.8rem">
+
+    <div id="binIdRow" style="display:none;margin-bottom:10px">
+      <label class="lbl">Bin ID <span style="font-weight:400;color:#64748b">(auto-created — share this with others)</span></label>
+      <input type="text" id="binIdInput" placeholder="auto-filled" style="font-family:monospace;font-size:.8rem">
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="setupNewBin()">Create My Data Bin</button>
+      <button class="btn btn-secondary" onclick="connectExisting()">Connect Existing Bin</button>
+      <button class="btn btn-secondary" onclick="closeModal('mSettings')">Cancel</button>
+    </div>
+    <div id="setupStatus" style="margin-top:10px;font-size:.83rem"></div>
+
+    <hr style="margin:16px 0;border-color:#e2e8f0">
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px;margin-bottom:10px;font-size:.82rem">
+      <b>📂 Load FY 2025-26 Opening Data</b><br>
+      <span style="color:#374151">Pre-fills banks, all 6 FDs, and 15 members from the audit report. Run once after creating your bin.</span><br>
+      <button class="btn btn-primary rw" onclick="loadAuditData()" style="margin-top:8px;padding:6px 14px;font-size:.82rem">Load Audit Data</button>
+    </div>
+
+    <hr style="margin:16px 0;border-color:#e2e8f0">
+    <div style="background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:12px;margin-bottom:10px;font-size:.82rem">
+      <b>💾 Backup & Restore</b><br>
+      <span style="color:#374151">Download a local copy of all your data anytime. If JSONBin is ever unavailable or data is lost, restore from backup in one click.</span><br>
+      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="exportBackup()" style="padding:6px 14px;font-size:.82rem;background:#d97706">⬇ Download Backup</button>
+        <button class="btn btn-secondary rw" onclick="importBackup()" style="padding:6px 14px;font-size:.82rem">⬆ Restore from Backup</button>
+      </div>
+      <div id="lastBackupInfo" style="margin-top:8px;font-size:.78rem;color:#92400e"></div>
+      <div id="autoBackupStatus" style="margin-top:4px;font-size:.78rem;color:#64748b">⏱ Auto-backup: starts after app connects</div>
+    </div>
+
+    <div style="font-size:.8rem;color:#64748b">
+      <b>Sharing with others (Secretary / Chairman):</b><br>
+      Send them the HTML file + your API Key + Bin ID. They click "Connect Existing Bin", enter both values, and see the same data live.
+    </div>
+
+    <hr style="margin:16px 0;border-color:#e2e8f0">
+    <div id="viewerConnectBlock" style="background:#f5f3ff;border:1px solid #c4b5fd;border-radius:8px;padding:12px;font-size:.82rem">
+      <b>👁 Committee Member Access (View Only)</b><br>
+      <span style="color:#374151">For committee members — they can view all data but cannot add, edit, or delete anything.</span><br>
+      <div style="margin-top:8px;color:#6d28d9;font-size:.8rem"><b>Instructions for committee members:</b><br>
+      1. Open the HTML file in Chrome<br>
+      2. Click ⚙ Setup → enter the API Key and Bin ID → click <b>Connect as Viewer</b></div>
+      <button class="btn" onclick="connectViewer()" style="margin-top:10px;padding:6px 14px;font-size:.82rem;background:#7c3aed;color:#fff;border:none;border-radius:7px;cursor:pointer;font-weight:600">👁 Connect as Viewer</button>
+    </div>
+
+    <div id="viewerStatusBlock" style="display:none;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:8px;padding:12px;font-size:.82rem">
+      <b>👁 Connected as Viewer (Read Only)</b><br>
+      <span style="color:#374151">You can view all society data. To make changes, contact the Treasurer.</span><br>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+        <button class="btn btn-secondary" onclick="disconnectViewer()" style="padding:6px 14px;font-size:.82rem">Exit Viewer Mode</button>
+        <button class="btn" onclick="exportBackup()" style="padding:6px 14px;font-size:.82rem;background:#d97706;color:#fff;border:none;border-radius:7px;cursor:pointer;font-weight:600">⬇ Download Backup</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Record Payment -->
+<div id="mPayment" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <h3 style="font-weight:700;font-size:1.05rem;margin-bottom:14px">💰 Record Payment</h3>
+    <input type="hidden" id="pmUnit">
+    <div class="grid2">
+      <div><label class="lbl">Unit No</label><input id="pmUnitDisplay" disabled style="background:#f8fafc"></div>
+      <div><label class="lbl">Owner Name</label><input id="pmOwner" placeholder="Name"></div>
+      <div><label class="lbl">Amount (₹)*</label><input type="number" id="pmAmt"></div>
+      <div><label class="lbl">Date*</label><input type="date" id="pmDate"></div>
+      <div><label class="lbl">For Month*</label>
+        <select id="pmMonth">
+          <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+          <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+          <option value="7">July</option><option value="8">August</option><option value="9">September</option>
+          <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+        </select>
+      </div>
+      <div><label class="lbl">Year*</label><select id="pmYear"></select></div>
+      <div><label class="lbl">Payment Mode</label>
+        <select id="pmMode"><option>ICICI Bank</option><option>Union Bank of India</option><option>UPI</option><option>NEFT/RTGS</option><option>Cheque</option><option>Cash</option></select>
+      </div>
+      <div><label class="lbl">Receipt No</label><input id="pmReceipt" placeholder="Optional"></div>
+    </div>
+    <div style="margin-top:10px"><label class="lbl">Notes</label><input id="pmNotes" placeholder="Optional"></div>
+    <div style="margin-top:10px"><label class="lbl">Recorded By</label>
+      <select id="pmRecordedBy">
+        <option value="Treasurer">Ameya Pathade (Treasurer)</option>
+        <option value="Secretary">Satyajit Kulkarni (Secretary)</option>
+        <option value="Chairman">Dr. Mukund Bodhankar (Chairman)</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-primary" onclick="savePayment()">Save Payment</button>
+      <button class="btn btn-secondary" onclick="closeModal('mPayment')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Expense -->
+<div id="mExpense" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <h3 id="mExpenseTitle" style="font-weight:700;font-size:1.05rem;margin-bottom:14px">📋 Add Expense</h3>
+    <div class="grid2">
+      <div><label class="lbl">Date*</label><input type="date" id="exDate"></div>
+      <div><label class="lbl">Amount (₹)*</label><input type="number" id="exAmt"></div>
+      <div><label class="lbl">Category*</label>
+        <select id="exCat" onchange="updateSubCats()">
+          <option value="">Select…</option>
+          <option>Maintenance</option><option>Administration</option><option>Other</option>
+        </select>
+      </div>
+      <div><label class="lbl">Sub-Category</label><select id="exSub"><option value="">—</option></select></div>
+      <div><label class="lbl">Vendor / Payee</label><input id="exVendor" placeholder="e.g. MSEDCL"></div>
+      <div><label class="lbl">Payment Mode</label>
+        <select id="exMode"><option>ICICI Bank</option><option>Union Bank of India</option><option>UPI</option><option>NEFT/RTGS</option><option>Cheque</option><option>Cash</option></select>
+      </div>
+    </div>
+    <div style="margin-top:10px"><label class="lbl">Payment Status</label>
+      <select id="exStatus">
+        <option value="Paid">✅ Paid</option>
+        <option value="Yet to be paid">⏳ Yet to be paid</option>
+      </select>
+    </div>
+    <div style="margin-top:10px"><label class="lbl">Who did payment</label><input id="exPaidBy" placeholder="e.g. Ameya Pathade, Satyajit Kulkarni"></div>
+    <div style="margin-top:10px"><label class="lbl">Notes / Remarks</label><textarea id="exNotes" rows="2" placeholder="Optional — bill no., remarks, etc."></textarea></div>
+    <div style="margin-top:10px">
+      <label class="lbl">Attach Bill (photo / image)</label>
+      <div id="exBillPreview" style="display:none;margin-bottom:8px;position:relative;text-align:center">
+        <img id="exBillImg" style="max-width:100%;max-height:180px;border-radius:6px;border:1px solid #e2e8f0;object-fit:contain">
+        <button onclick="clearBill()" style="position:absolute;top:4px;right:4px;background:#dc2626;color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:.75rem;line-height:1">✕</button>
+      </div>
+      <button type="button" onclick="document.getElementById('exBillFile').click()" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:#f1f5f9;border:1.5px dashed #94a3b8;border-radius:6px;cursor:pointer;font-size:.83rem;color:#475569">📎 Choose image</button>
+      <input type="file" id="exBillFile" accept="image/*" style="position:absolute;opacity:0;width:1px;height:1px;overflow:hidden" onchange="handleBillUpload(this)">
+    </div>
+    <div style="margin-top:10px"><label class="lbl">Recorded By</label>
+      <select id="exRecordedBy">
+        <option value="Treasurer">Ameya Pathade (Treasurer)</option>
+        <option value="Secretary">Satyajit Kulkarni (Secretary)</option>
+        <option value="Chairman">Dr. Mukund Bodhankar (Chairman)</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-primary" onclick="saveExpense()">Save Expense</button>
+      <button class="btn btn-secondary" onclick="closeModal('mExpense')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add / Edit FD -->
+<div id="mFD" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <h3 id="mFDTitle" style="font-weight:700;font-size:1.05rem;margin-bottom:14px">🏦 Add Fixed Deposit</h3>
+    <input type="hidden" id="fdEditId">
+    <div class="grid2">
+      <div><label class="lbl">Bank*</label>
+        <select id="fdBank"><option>Union Bank of India</option><option>ICICI Bank</option><option>SBI</option><option>HDFC Bank</option><option>Other</option></select>
+      </div>
+      <div><label class="lbl">FD Number*</label><input id="fdNo" placeholder="Receipt / FD No"></div>
+      <div><label class="lbl">Amount Invested (₹)*</label><input type="number" id="fdAmt" oninput="calcMaturity()"></div>
+      <div><label class="lbl">ROI % p.a.*</label><input type="number" id="fdROI" step="0.01" placeholder="e.g. 6.76" oninput="calcMaturity()"></div>
+      <div><label class="lbl">Date Opened*</label><input type="date" id="fdOpen" oninput="calcMaturity()"></div>
+      <div><label class="lbl">Maturity Date*</label><input type="date" id="fdMature" oninput="calcMaturity()"></div>
+      <div><label class="lbl">Maturity Value (₹)</label><input type="number" id="fdMatVal" placeholder="Auto-calculated"></div>
+      <div><label class="lbl">Status</label><select id="fdStat"><option>Open</option><option>Closed</option></select></div>
+    </div>
+    <div style="margin-top:10px"><label class="lbl">Notes</label><input id="fdNotes" placeholder="Optional"></div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-primary" onclick="saveFD()">Save FD</button>
+      <button class="btn btn-secondary" onclick="closeModal('mFD')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add / Update Bank -->
+<div id="mBank" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <h3 style="font-weight:700;font-size:1.05rem;margin-bottom:14px">💳 Add / Update Bank Account</h3>
+    <div class="grid2">
+      <div><label class="lbl">Bank Name*</label><input id="bkName" placeholder="e.g. ICICI Bank"></div>
+      <div><label class="lbl">Account No</label><input id="bkAcc" placeholder="Last 4 digits OK"></div>
+      <div><label class="lbl">Balance (₹)*</label><input type="number" id="bkBal" placeholder="Current balance"></div>
+      <div><label class="lbl">As On Date*</label><input type="date" id="bkDate"></div>
+    </div>
+    <div style="margin-top:10px"><label class="lbl">Notes</label><input id="bkNotes" placeholder="Optional"></div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-primary" onclick="saveBank()">Save</button>
+      <button class="btn btn-secondary" onclick="closeModal('mBank')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add / Edit Fund -->
+<div id="mFund" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <h3 id="mFundTitle" style="font-weight:700;font-size:1.05rem;margin-bottom:14px">🏛 Add / Update Fund</h3>
+    <input type="hidden" id="fundEditId">
+    <div class="grid2">
+      <div><label class="lbl">Fund Name*</label><input id="fuName" placeholder="e.g. Building Repair Fund"></div>
+      <div><label class="lbl">Category*</label>
+        <select id="fuCat">
+          <option>Reserves & Surplus</option><option>Capital Account</option><option>Other</option>
+        </select>
+      </div>
+      <div><label class="lbl">Amount (₹)*</label><input type="number" id="fuAmt" placeholder="Current balance"></div>
+      <div><label class="lbl">As On Date*</label><input type="date" id="fuDate"></div>
+    </div>
+    <div style="margin-top:10px"><label class="lbl">Notes</label><input id="fuNotes" placeholder="Optional"></div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-primary" onclick="saveFund()">Save Fund</button>
+      <button class="btn btn-secondary" onclick="closeModal('mFund')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add / Edit Asset -->
+<div id="mAsset" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <h3 id="mAssetTitle" style="font-weight:700;font-size:1.05rem;margin-bottom:14px">🏗 Add / Update Fixed Asset</h3>
+    <input type="hidden" id="assetEditId">
+    <div class="grid2">
+      <div><label class="lbl">Asset Name*</label><input id="astName" placeholder="e.g. CCTV, Water Motor"></div>
+      <div><label class="lbl">Book Value (₹)*</label><input type="number" id="astVal" placeholder="Written-down value"></div>
+      <div style="grid-column:1/-1"><label class="lbl">As On Date*</label><input type="date" id="astDate" style="max-width:200px"></div>
+    </div>
+    <div style="margin-top:10px"><label class="lbl">Notes</label><input id="astNotes" placeholder="Optional (e.g. WDV, purchased date)"></div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-primary" onclick="saveAsset()">Save Asset</button>
+      <button class="btn btn-secondary" onclick="closeModal('mAsset')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add / Edit Member -->
+<div id="mMember" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <h3 id="mMemberTitle" style="font-weight:700;font-size:1.05rem;margin-bottom:14px">👤 Add Member</h3>
+    <input type="hidden" id="mbEditUnit">
+    <div class="grid2">
+      <div><label class="lbl">Unit No*</label><input id="mbUnit" placeholder="e.g. Block 101"></div>
+      <div><label class="lbl">Owner Name*</label><input id="mbName" placeholder="Full name"></div>
+      <div><label class="lbl">Phone</label><input id="mbPhone" placeholder="Mobile number"></div>
+      <div><label class="lbl">Email</label><input type="email" id="mbEmail" placeholder="Optional"></div>
+      <div id="mbMaintRow"><label class="lbl">Monthly Maintenance (₹)*</label><input type="number" id="mbMaint" placeholder="e.g. 2500"></div>
+      <div><label class="lbl">Flat Type</label><input id="mbType" placeholder="e.g. 2BHK"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-primary" onclick="saveMember()">Save</button>
+      <button class="btn btn-secondary" onclick="closeModal('mMember')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Maintenance Amount -->
+<div id="mEditMaint" class="modal-overlay" style="display:none">
+  <div class="modal-box" style="max-width:380px">
+    <h3 style="font-weight:700;font-size:1.05rem;margin-bottom:14px">🔧 Edit Maintenance Amount</h3>
+    <input type="hidden" id="emUnit">
+    <div style="margin-bottom:10px">
+      <label class="lbl">Unit No</label>
+      <input id="emUnitDisplay" disabled style="background:#f8fafc">
+    </div>
+    <div>
+      <label class="lbl">Monthly Maintenance (₹)*</label>
+      <input type="number" id="emAmt" placeholder="e.g. 2500">
+    </div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-primary" onclick="saveMaintAmount()">Save</button>
+      <button class="btn btn-secondary" onclick="closeModal('mEditMaint')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Prior Dues -->
+<div id="mPriorDue" class="modal-overlay" style="display:none">
+  <div class="modal-box" style="max-width:400px">
+    <h3 style="font-weight:700;font-size:1.05rem;margin-bottom:14px">✏️ Edit Prior Dues</h3>
+    <input type="hidden" id="pdUnit">
+    <div style="margin-bottom:10px">
+      <label class="lbl">Unit No</label>
+      <input id="pdUnitDisplay" disabled style="background:#f8fafc">
+    </div>
+    <div style="margin-bottom:6px">
+      <label class="lbl">Outstanding Amount (₹)</label>
+      <input type="number" id="pdAmt" placeholder="e.g. 40140">
+    </div>
+    <div style="background:#fef9c3;border:1px solid #fde68a;border-radius:7px;padding:9px 12px;font-size:.8rem;margin-bottom:14px;line-height:1.6">
+      <b>Guide:</b> Enter a <b>positive</b> number for outstanding dues (e.g. 40140).<br>
+      Enter a <b>negative</b> number for advance / credit (e.g. -8180).<br>
+      Enter <b>0</b> to clear.
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary" onclick="savePriorDue()">Save</button>
+      <button class="btn btn-secondary" onclick="closeModal('mPriorDue')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add / Edit Note -->
+<div id="mNote" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <h3 id="mNoteTitle" style="font-weight:700;font-size:1.05rem;margin-bottom:14px">📝 Add Note</h3>
+    <input type="hidden" id="ntEditId">
+    <div class="grid2" style="margin-bottom:10px">
+      <div><label class="lbl">Date*</label><input type="date" id="ntDate"></div>
+      <div><label class="lbl">Title</label><input id="ntTitle" placeholder="Short heading (optional)"></div>
+    </div>
+    <div style="margin-bottom:14px">
+      <label class="lbl">Note*</label>
+      <textarea id="ntText" rows="5" placeholder="Write your note here…"></textarea>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary" onclick="saveNote()">Save Note</button>
+      <button class="btn btn-secondary" onclick="closeModal('mNote')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add / Edit Income -->
+<div id="mIncome" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <h3 id="mIncomeTitle" style="font-weight:700;font-size:1.05rem;margin-bottom:14px">💰 Add Income</h3>
+    <input type="hidden" id="incEditId">
+    <div class="grid2">
+      <div><label class="lbl">Date*</label><input type="date" id="incDate"></div>
+      <div><label class="lbl">Amount (₹)*</label><input type="number" id="incAmt"></div>
+      <div><label class="lbl">Category*</label>
+        <select id="incCat" onchange="updateIncSubCats()">
+          <option value="">Select…</option>
+          <option>Interest on Dues</option><option>Interest Received</option><option>Other Income</option>
+        </select>
+      </div>
+      <div><label class="lbl">Sub-Category</label><select id="incSub"><option value="">—</option></select></div>
+    </div>
+    <div style="margin-top:10px"><label class="lbl">Notes</label><input id="incNotes" placeholder="Optional"></div>
+    <div style="margin-top:10px"><label class="lbl">Recorded By</label>
+      <select id="incRecordedBy">
+        <option value="Treasurer">Ameya Pathade (Treasurer)</option>
+        <option value="Secretary">Satyajit Kulkarni (Secretary)</option>
+        <option value="Chairman">Dr. Mukund Bodhankar (Chairman)</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-primary" onclick="saveIncome()">Save Income</button>
+      <button class="btn btn-secondary" onclick="closeModal('mIncome')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Committee Member Modal -->
+<div id="mCommMember" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <h3 style="font-weight:700;font-size:1.05rem;margin-bottom:14px">👤 Add Committee Member</h3>
+    <label class="lbl">Name</label>
+    <input id="cmName" type="text" placeholder="Full name" style="margin-bottom:10px">
+    <div style="display:flex;gap:8px;margin-top:6px">
+      <button class="btn btn-primary" onclick="saveCommMember()">Save Member</button>
+      <button class="btn btn-secondary" onclick="closeModal('mCommMember')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Committee Work Item Modal -->
+<div id="mCommWork" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <h3 id="mCommWorkTitle" style="font-weight:700;font-size:1.05rem;margin-bottom:14px">📌 Add Work Item</h3>
+    <input id="cwId" type="hidden">
+    <label class="lbl">Work Item Description</label>
+    <input id="cwText" type="text" placeholder="e.g. Security Management" style="margin-bottom:10px">
+    <label class="lbl">Tracking Notes</label>
+    <textarea id="cwNotes" rows="3" placeholder="Status, assigned to, action taken, next steps…" style="margin-bottom:10px;resize:vertical"></textarea>
+    <div style="display:flex;gap:8px;margin-top:6px">
+      <button class="btn btn-primary" onclick="saveCommWork()">Save</button>
+      <button class="btn btn-secondary" onclick="closeModal('mCommWork')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Committee Responsibility Modal -->
+<div id="mCommResp" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <h3 id="mCommRespTitle" style="font-weight:700;font-size:1.05rem;margin-bottom:14px">📋 Add Responsibility</h3>
+    <input id="crId" type="hidden">
+    <label class="lbl">Task / Area</label>
+    <input id="crTask" type="text" placeholder="e.g. Water Management" style="margin-bottom:10px">
+    <label class="lbl">Primary Person</label>
+    <input id="crPrimary" type="text" placeholder="Name" style="margin-bottom:10px">
+    <label class="lbl">Secondary Person</label>
+    <input id="crSecondary" type="text" placeholder="Name" style="margin-bottom:10px">
+    <div style="display:flex;gap:8px;margin-top:6px">
+      <button class="btn btn-primary" onclick="saveCommResp()">Save</button>
+      <button class="btn btn-secondary" onclick="closeModal('mCommResp')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Contact Modal -->
+<div id="mContact" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <h3 id="mContactTitle" style="font-weight:700;font-size:1.05rem;margin-bottom:14px">📞 Add Contact</h3>
+    <input id="conId" type="hidden">
+    <label class="lbl">Service / Category</label>
+    <input id="conService" list="serviceList" type="text" style="width:100%;margin-bottom:10px;padding:7px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:.9rem" placeholder="e.g. Lift, Generator, Security…">
+    <datalist id="serviceList"></datalist>
+    <label class="lbl">Name</label>
+    <input id="conName" type="text" style="width:100%;margin-bottom:10px;padding:7px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:.9rem" placeholder="Full name">
+    <label class="lbl">Role / Responsibility</label>
+    <input id="conRole" type="text" style="width:100%;margin-bottom:10px;padding:7px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:.9rem" placeholder="e.g. Owner, Technician, Supervisor…">
+    <label class="lbl">Phone</label>
+    <input id="conPhone" type="tel" style="width:100%;margin-bottom:10px;padding:7px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:.9rem" placeholder="10-digit mobile number">
+    <label class="lbl">Notes / Comments</label>
+    <textarea id="conNotes" rows="2" style="width:100%;margin-bottom:16px;padding:7px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:.9rem;resize:vertical" placeholder="Any notes about this contact…"></textarea>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="closeModal('mContact')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveContact()">Save Contact</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────
+// CONFIG
+// ─────────────────────────────────────────────────────────────────
+const JSONBIN_BASE = 'https://api.jsonbin.io/v3';
+let API_KEY = localStorage.getItem('mac_apikey') || '';
+let BIN_ID  = localStorage.getItem('mac_binid')  || '';
+let currentRole = localStorage.getItem('mac_role') || 'Treasurer';
+let autoBackupTimer = null;
+let autoRefreshTimer = null;
+let saveRetryTimer = null;
+let pendingCloudSave = false;
+let editingExpenseId = null;
+let billImageData = null;
+let readOnlyMode = localStorage.getItem('mac_readonly') === 'true';
+
+const MONTHS = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
+const ROLE_NAMES = {
+  Treasurer: 'Ameya Pathade (Treasurer)',
+  Secretary: 'Satyajit Kulkarni (Secretary)',
+  Chairman:  'Dr. Mukund Bodhankar (Chairman)'
+};
+function roleName(r) { return ROLE_NAMES[r] || r || '—'; }
+const now    = new Date();
+
+// Local data cache (loaded once, updated on writes)
+let DB = { members:[], payments:[], expenses:[], fds:[], banks:[], notes:[], income:[], funds:[], assets:[], committee:{ members:[], responsibilities:[] }, contacts:[] };
+
+const EXP_SUBS = {
+  'Maintenance':    ['Electricity Bill','Generator AMC','Housekeeping Expenses','Water Pump Expenses','Plumbing Expenses','Diesel Expenses','General Expenses','PMC Garbage Expenses','Electrical Repairs & Maintenance','Lift AMC','Water Tank Expenses','Fabrication & Civil Work','Repair & Maintenance - Lift','Account Writing Charges','Repair & Maintenance - Motor Pump','General Repairs & Maintenance','Water Tank Cleaning','Society Grill Work','Repair & Maintenance - Glass Work'],
+  'Administration': ['Bank Charges','Security Charges','Printing & Stationery','Audit Fees','Society Run Software Charges','ITR Filing Charges','General Insurance'],
+  'Other':          ['Yearly Discount','Festival Expenses','Pigeon Net','Diwali Festival Expenses','Borewell Location Survey','PMC Water Connection','Borewell Survey','Depreciation','Other']
+};
+
+const INC_SUBS = {
+  'Interest on Dues':  ['Late Fee'],
+  'Interest Received': ['Bank Interest','FD Interest'],
+  'Other Income':      ['Non Occupancy Charges','Round Off','Other']
+};
+
+// ─────────────────────────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────────────────────────
+function init() {
+  document.getElementById('roleSelect').value = currentRole;
+  const fy = now.getMonth() >= 3
+    ? `${now.getFullYear()}-${String(now.getFullYear()+1).slice(-2)}`
+    : `${now.getFullYear()-1}-${String(now.getFullYear()).slice(-2)}`;
+  document.getElementById('fyLabel').textContent = fy;
+
+  const yrs = [now.getFullYear()-1, now.getFullYear(), now.getFullYear()+1];
+  ['maintYear','expYear','pmYear','incYear'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = yrs.map(y=>`<option ${y===now.getFullYear()?'selected':''}>${y}</option>`).join('');
+  });
+  document.getElementById('maintMonth').value = now.getMonth()+1;
+  document.getElementById('expMonth').value   = now.getMonth()+1;
+  document.getElementById('pmMonth').value    = now.getMonth()+1;
+  document.getElementById('incMonth').value   = now.getMonth()+1;
+
+  const savedTs = localStorage.getItem('mac_lastSaved');
+  if (savedTs) document.getElementById('lastSavedLabel').textContent = '💾 Saved ' + savedTs;
+
+  if (readOnlyMode) document.body.classList.add('readonly');
+  if (!API_KEY || !BIN_ID) { showSettings(); }
+  else { loadFromBin(false); }
+}
+
+function setRole(v) { currentRole=v; localStorage.setItem('mac_role',v); }
+
+// ─────────────────────────────────────────────────────────────────
+// JSONBIN API
+// ─────────────────────────────────────────────────────────────────
+async function readBin() {
+  const r = await fetch(`${JSONBIN_BASE}/b/${BIN_ID}/latest`, {
+    headers: { 'X-Master-Key': API_KEY }
+  });
+  if (!r.ok) throw new Error(`Read failed: ${r.status}`);
+  const j = await r.json();
+  return j.record || {};
+}
+
+async function writeBin(data) {
+  const r = await fetch(`${JSONBIN_BASE}/b/${BIN_ID}`, {
+    method: 'PUT',
+    headers: { 'X-Master-Key': API_KEY, 'Content-Type': 'application/json', 'X-Bin-Versioning': 'false' },
+    body: JSON.stringify(data)
+  });
+  if (!r.ok) throw new Error(`Write failed: ${r.status}`);
+  return await r.json();
+}
+
+async function createBin(name) {
+  const r = await fetch(`${JSONBIN_BASE}/b`, {
+    method: 'POST',
+    headers: { 'X-Master-Key': API_KEY, 'Content-Type': 'application/json', 'X-Bin-Name': name, 'X-Bin-Private': 'true' },
+    body: JSON.stringify({ members:[], payments:[], expenses:[], fds:[], banks:[], notes:[], income:[], funds:[], assets:[], committee:{ members:[], responsibilities:[] }, contacts:[] })
+  });
+  if (!r.ok) throw new Error(`Create failed: ${r.status}`);
+  const j = await r.json();
+  return j.metadata.id;
+}
+
+async function loadFromBin(showSpinner) {
+  if (showSpinner) toast('Loading…', 'blue', 0);
+  try {
+    const data = await readBin();
+    DB.members  = data.members  || [];
+    DB.payments = data.payments || [];
+    DB.expenses = data.expenses || [];
+    DB.fds      = data.fds      || [];
+    DB.banks    = data.banks    || [];
+    DB.notes    = data.notes    || [];
+    DB.income   = data.income   || [];
+    DB.funds    = data.funds    || [];
+    DB.assets     = data.assets     || [];
+    DB.committee  = data.committee  || { members:[], responsibilities:[] };
+    DB.contacts   = data.contacts   || [];
+    if (showSpinner) toast('Data refreshed ✓');
+    startAutoBackup();
+    startAutoRefresh();
+    renderCurrentTab();
+  } catch(e) {
+    const cache = localStorage.getItem('mac_db_cache');
+    if (cache) {
+      try {
+        const data = JSON.parse(cache);
+        DB.members   = data.members   || [];
+        DB.payments  = data.payments  || [];
+        DB.expenses  = data.expenses  || [];
+        DB.fds       = data.fds       || [];
+        DB.banks     = data.banks     || [];
+        DB.notes     = data.notes     || [];
+        DB.income    = data.income    || [];
+        DB.funds     = data.funds     || [];
+        DB.assets    = data.assets    || [];
+        DB.committee = data.committee || { members:[], responsibilities:[] };
+        DB.contacts  = data.contacts  || [];
+        toast('Cloud unavailable — loaded from local cache ✓', 'red', 5000);
+      } catch(_) {}
+    } else {
+      toast('Failed to load: ' + e.message, 'red');
+    }
+    renderCurrentTab();
+  }
+}
+
+// Mutate DB, then persist to bin
+async function persist(msg) {
+  localStorage.setItem('mac_db_cache', JSON.stringify(DB));
+  try {
+    await writeBin(DB);
+    const ts = new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+    localStorage.setItem('mac_lastSaved', ts);
+    document.getElementById('lastSavedLabel').textContent = '💾 Saved ' + ts;
+    document.getElementById('saveBanner').style.display = 'none';
+    pendingCloudSave = false;
+    if (saveRetryTimer) { clearInterval(saveRetryTimer); saveRetryTimer = null; }
+    if (msg) toast(msg);
+  } catch(e) {
+    pendingCloudSave = true;
+    document.getElementById('saveBanner').style.display = 'block';
+    startSaveRetry();
+    console.error('persist failed:', e);
+  }
+}
+
+function startSaveRetry() {
+  if (saveRetryTimer) return;
+  saveRetryTimer = setInterval(async () => {
+    if (!pendingCloudSave || !API_KEY || !BIN_ID) return;
+    try {
+      await writeBin(DB);
+      const ts = new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+      localStorage.setItem('mac_lastSaved', ts);
+      document.getElementById('lastSavedLabel').textContent = '💾 Saved ' + ts;
+      document.getElementById('saveBanner').style.display = 'none';
+      pendingCloudSave = false;
+      clearInterval(saveRetryTimer); saveRetryTimer = null;
+      toast('Data saved to cloud ✓');
+    } catch(_) {}
+  }, 60 * 1000);
+}
+
+window.addEventListener('beforeunload', e => {
+  if (pendingCloudSave) {
+    e.preventDefault();
+    e.returnValue = 'Your data is not saved to cloud yet! Stay on the page until the red banner disappears.';
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────
+// SETTINGS / SETUP
+// ─────────────────────────────────────────────────────────────────
+function showSettings() {
+  document.getElementById('apiKeyInput').value = API_KEY;
+  document.getElementById('binIdInput').value  = BIN_ID;
+  document.getElementById('binIdRow').style.display = BIN_ID ? 'block' : 'none';
+  document.getElementById('setupStatus').textContent = '';
+  showLastBackupInfo();
+  document.getElementById('viewerConnectBlock').style.display = readOnlyMode ? 'none'  : 'block';
+  document.getElementById('viewerStatusBlock').style.display  = readOnlyMode ? 'block' : 'none';
+  document.getElementById('mSettings').style.display = 'flex';
+}
+
+async function setupNewBin() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key.startsWith('$2')) { setStatus('⚠ Paste the Master Key from jsonbin.io', 'red'); return; }
+  API_KEY = key;
+  setStatus('Creating your data bin…', 'blue');
+  try {
+    const id = await createBin('Madhav Apartments Society');
+    BIN_ID = id;
+    localStorage.setItem('mac_apikey', API_KEY);
+    localStorage.setItem('mac_binid',  BIN_ID);
+    document.getElementById('binIdInput').value = BIN_ID;
+    document.getElementById('binIdRow').style.display = 'block';
+    setStatus('✅ Bin created! Your data is ready. Share the HTML file + API Key + Bin ID with others.', 'green');
+    DB = { members:[], payments:[], expenses:[], fds:[], banks:[], notes:[], income:[], funds:[], assets:[], committee:{ members:[], responsibilities:[] }, contacts:[] };
+    setTimeout(() => { closeModal('mSettings'); renderCurrentTab(); }, 1200);
+  } catch(e) {
+    setStatus('❌ Error: ' + e.message + ' — check your API key.', 'red');
+  }
+}
+
+async function connectExisting() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  const bid = document.getElementById('binIdInput').value.trim();
+  document.getElementById('binIdRow').style.display = 'block';
+  if (!key || !bid) { setStatus('⚠ Enter both API Key and Bin ID', 'red'); return; }
+  API_KEY = key; BIN_ID = bid;
+  setStatus('Testing connection…', 'blue');
+  try {
+    const data = await readBin();
+    DB.members  = data.members  || [];
+    DB.payments = data.payments || [];
+    DB.expenses = data.expenses || [];
+    DB.fds      = data.fds      || [];
+    DB.banks    = data.banks    || [];
+    DB.notes    = data.notes    || [];
+    DB.income   = data.income   || [];
+    DB.funds    = data.funds    || [];
+    DB.assets     = data.assets     || [];
+    DB.committee  = data.committee  || { members:[], responsibilities:[] };
+    DB.contacts   = data.contacts   || [];
+    localStorage.setItem('mac_apikey', API_KEY);
+    localStorage.setItem('mac_binid',  BIN_ID);
+    setStatus(`✅ Connected! Found ${DB.members.length} members.`, 'green');
+    setTimeout(() => { closeModal('mSettings'); renderCurrentTab(); }, 800);
+  } catch(e) {
+    setStatus('❌ ' + e.message, 'red');
+  }
+}
+
+function setStatus(msg, type) {
+  const el = document.getElementById('setupStatus');
+  el.textContent = msg;
+  el.style.color = type === 'red' ? '#dc2626' : type === 'green' ? '#15803d' : '#2563eb';
+}
+
+// ─────────────────────────────────────────────────────────────────
+// TABS
+// ─────────────────────────────────────────────────────────────────
+let activeTab = 'dashboard';
+function switchTab(tab) {
+  activeTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.section').forEach(s => s.classList.toggle('active', s.id === 'sec-'+tab));
+  renderCurrentTab();
+}
+function renderCurrentTab() {
+  if (activeTab==='dashboard')   renderDashboard();
+  if (activeTab==='expenses')    renderExpenses();
+  if (activeTab==='fds')         renderFDs();
+  if (activeTab==='banks')       renderBanks();
+  if (activeTab==='members')     renderMembers();
+  if (activeTab==='maintenance') renderMaintenance();
+  if (activeTab==='notes')       renderNotes();
+  if (activeTab==='income')      renderIncome();
+  if (activeTab==='committee')   renderCommittee();
+  if (activeTab==='contacts')    renderContacts();
+}
+
+// ─────────────────────────────────────────────────────────────────
+// DASHBOARD
+// ─────────────────────────────────────────────────────────────────
+function renderDashboard() {
+  const m = now.getMonth()+1, y = now.getFullYear();
+  const monthPay = DB.payments.filter(p => +p.month===m && +p.year===y);
+  const monthExp = DB.expenses.filter(e => { const d=new Date(e.date); return d.getMonth()+1===m && d.getFullYear()===y; });
+  const openFDs  = DB.fds.filter(f => f.status !== 'Closed');
+
+  const paidMap = {};
+  monthPay.forEach(p => { paidMap[p.unitNo] = (paidMap[p.unitNo]||0)+Number(p.amount); });
+  const collected = monthPay.reduce((s,p)=>s+Number(p.amount),0);
+  const expTotal  = monthExp.reduce((s,e)=>s+Number(e.amount),0);
+  const fdTotal   = openFDs.reduce((s,f)=>s+Number(f.amount),0);
+  const bankTotal = DB.banks.reduce((s,b)=>s+Number(b.balance),0);
+  const paidCount = Object.keys(paidMap).length;
+
+  const pending = DB.members.filter(m2 => (paidMap[m2.unitNo]||0) < Number(m2.monthlyMaintenance||0));
+  const fdAlert = openFDs.filter(f => { const d=(new Date(f.maturityDate)-now)/86400000; return d>=0&&d<=30; });
+
+  document.getElementById('dashContent').innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <h2 style="font-weight:700;font-size:1.05rem">${MONTHS[m]} ${y} — Overview</h2>
+      ${!API_KEY||!BIN_ID ? '<div style="background:#fef9c3;border:1px solid #fde68a;padding:8px 12px;border-radius:7px;font-size:.82rem">⚠️ Not connected. Click <b>⚙ Setup</b> to get started.</div>' : ''}
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:18px">
+      <div class="stat green"><div style="opacity:.8;font-size:.78rem">Collected This Month</div><div style="font-size:1.45rem;font-weight:800;margin-top:3px">₹${fmt(collected)}</div><div style="font-size:.72rem;opacity:.85">${paidCount}/${DB.members.length} flats paid</div></div>
+      <div class="stat red"><div style="opacity:.8;font-size:.78rem">Expenses This Month</div><div style="font-size:1.45rem;font-weight:800;margin-top:3px">₹${fmt(expTotal)}</div></div>
+      <div class="stat blue"><div style="opacity:.8;font-size:.78rem">Bank Balance</div><div style="font-size:1.45rem;font-weight:800;margin-top:3px">₹${fmt(bankTotal)}</div></div>
+      <div class="stat teal"><div style="opacity:.8;font-size:.78rem">Total FDs (Open)</div><div style="font-size:1.45rem;font-weight:800;margin-top:3px">₹${fmt(fdTotal)}</div></div>
+    </div>
+    ${fdAlert.length ? `<div style="background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:.83rem">⚠️ <b>${fdAlert.length} FD(s) maturing within 30 days.</b> <button onclick="switchTab('fds')" style="background:none;border:none;color:#1d4ed8;cursor:pointer;font-size:.83rem;text-decoration:underline">View →</button></div>` : ''}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+          <b>Pending Dues (${pending.length})</b>
+          <button onclick="switchTab('maintenance')" style="background:none;border:none;color:#2563eb;cursor:pointer;font-size:.8rem;text-decoration:underline">View All →</button>
+        </div>
+        ${pending.slice(0,8).map(m2=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:.83rem"><span>${m2.unitNo} — ${m2.ownerName}</span><span class="badge-pending">Pending</span></div>`).join('')}
+        ${pending.length>8?`<div style="color:#94a3b8;font-size:.78rem;margin-top:6px;text-align:center">+${pending.length-8} more</div>`:''}
+        ${!pending.length?'<div style="color:#22c55e;font-size:.85rem;text-align:center;padding:12px">All flats paid this month ✓</div>':''}
+      </div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+          <b>Recent Expenses</b>
+          <button onclick="switchTab('expenses')" style="background:none;border:none;color:#2563eb;cursor:pointer;font-size:.8rem;text-decoration:underline">View All →</button>
+        </div>
+        ${monthExp.slice(-8).reverse().map(e=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:.83rem"><span>${e.category}${e.subCategory?' — '+e.subCategory:''}</span><span style="font-weight:600">₹${fmt(+e.amount)}</span></div>`).join('')}
+        ${!monthExp.length?'<div style="color:#94a3b8;font-size:.85rem;text-align:center;padding:12px">No expenses this month</div>':''}
+      </div>
+    </div>`;
+}
+
+
+function openPayModal(unit, owner, maint, month, year) {
+  document.getElementById('pmUnit').value        = unit;
+  document.getElementById('pmUnitDisplay').value = unit;
+  document.getElementById('pmOwner').value       = owner;
+  document.getElementById('pmAmt').value         = maint;
+  document.getElementById('pmDate').value        = toDateVal(now);
+  document.getElementById('pmMonth').value       = month;
+  document.getElementById('pmYear').value        = year;
+  document.getElementById('pmReceipt').value     = '';
+  document.getElementById('pmNotes').value       = '';
+  document.getElementById('pmRecordedBy').value  = currentRole;
+  document.getElementById('mPayment').style.display = 'flex';
+}
+
+async function savePayment() {
+  const unit=document.getElementById('pmUnit').value;
+  const amt=document.getElementById('pmAmt').value;
+  const date=document.getElementById('pmDate').value;
+  if (!unit||!amt||!date) { toast('Fill required fields','red'); return; }
+  DB.payments.push({ id:uid('PAY'), date, unitNo:unit, ownerName:document.getElementById('pmOwner').value,
+    amount:+amt, month:+document.getElementById('pmMonth').value, year:+document.getElementById('pmYear').value,
+    paymentMode:document.getElementById('pmMode').value, receiptNo:document.getElementById('pmReceipt').value,
+    notes:document.getElementById('pmNotes').value, recordedBy:document.getElementById('pmRecordedBy').value });
+  await persist(`Payment recorded for ${unit} ✅`);
+  closeModal('mPayment'); renderMaintenance();
+}
+
+// ─────────────────────────────────────────────────────────────────
+// EXPENSES
+// ─────────────────────────────────────────────────────────────────
+function renderExpenses() {
+  const m  = +document.getElementById('expMonth').value;
+  const y  = +document.getElementById('expYear').value;
+  const cf = document.getElementById('expCatFilter').value;
+  let data = DB.expenses.filter(e => { const d=new Date(e.date); return d.getMonth()+1===m && d.getFullYear()===y; });
+
+  const cats = [...new Set(data.map(e=>e.category))];
+  const prev = document.getElementById('expCatFilter').value;
+  document.getElementById('expCatFilter').innerHTML = '<option value="">All Categories</option>' + cats.map(c=>`<option ${c===prev?'selected':''}>${c}</option>`).join('');
+
+  if (cf) data = data.filter(e=>e.category===cf);
+  const total = data.reduce((s,e)=>s+Number(e.amount),0);
+  const catMap = {};
+  data.forEach(e=>{ catMap[e.category]=(catMap[e.category]||0)+Number(e.amount); });
+
+  document.getElementById('expSummary').innerHTML = `
+    <div class="stat red"><div style="opacity:.8;font-size:.78rem">Total Expenses</div><div style="font-size:1.35rem;font-weight:800;margin-top:3px">₹${fmt(total)}</div></div>
+    <div class="stat orange"><div style="opacity:.8;font-size:.78rem">Transactions</div><div style="font-size:1.35rem;font-weight:800;margin-top:3px">${data.length}</div></div>
+    ${Object.entries(catMap).map(([k,v])=>`<div class="card" style="border-left:4px solid #3b82f6;padding:12px"><div style="font-size:.75rem;color:#64748b">${k}</div><div style="font-weight:700;font-size:.95rem;margin-top:2px">₹${fmt(v)}</div></div>`).join('')}`;
+
+  document.getElementById('expTbody').innerHTML = data.length
+    ? data.sort((a,b)=>new Date(b.date)-new Date(a.date)).map(e=>`<tr>
+        <td>${fmtDate(e.date)}${e.time?'<br><span style="font-size:.72rem;color:#94a3b8">🕐 '+e.time+'</span>':''}</td>
+        <td class="sm-hide">${e.category}</td><td class="sm-hide">${e.subCategory||'—'}</td>
+        <td class="sm-hide">${e.vendor||'—'}</td><td class="sm-hide">${e.paymentMode}</td>
+        <td style="font-weight:600">₹${fmt(+e.amount)}</td>
+        <td><span onclick="toggleExpenseStatus('${e.id}')" style="cursor:pointer;border-radius:99px;padding:3px 10px;font-size:.75rem;font-weight:600;white-space:nowrap;${e.paymentStatus==='Yet to be paid'?'background:#fef3c7;color:#92400e':'background:#dcfce7;color:#15803d'}">${e.paymentStatus==='Yet to be paid'?'⏳ Yet to pay':'✅ Paid'}</span></td>
+        <td class="sm-hide" style="font-size:.78rem;color:#334155;max-width:130px;white-space:normal">${h(e.paidBy||'—')}</td>
+        <td class="sm-hide" style="font-size:.78rem;color:#64748b;max-width:160px;white-space:normal">${e.notes||'—'}</td>
+        <td class="sm-hide"><span style="background:#eff6ff;color:#1d4ed8;border-radius:99px;padding:2px 8px;font-size:.75rem;font-weight:600;white-space:nowrap">${roleName(e.recordedBy)}</span></td>
+        <td style="white-space:nowrap">
+          ${e.billImage?`<button onclick="viewBill('${e.id}')" title="View Bill" style="background:none;border:none;cursor:pointer;font-size:1rem;padding:0 3px">📎</button>`:''}
+          <button class="btn-edit rw" onclick="openEditExpenseModal('${e.id}')" title="Edit" style="background:#f1f5f9;border:1px solid #cbd5e1;border-radius:4px;padding:2px 7px;cursor:pointer;font-size:.82rem;margin-right:3px">✎</button>
+          <button class="btn-danger rw" onclick="delExpense('${e.id}')">✕</button>
+        </td>
+      </tr>`).join('')
+    : '<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:24px">No expenses for this month</td></tr>';
+}
+
+function showExpenseModal() {
+  editingExpenseId = null;
+  document.getElementById('mExpenseTitle').textContent = '📋 Add Expense';
+  document.getElementById('exDate').value=toDateVal(now);
+  ['exAmt','exVendor','exNotes','exPaidBy'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('exCat').value='';
+  document.getElementById('exStatus').value='Paid';
+  document.getElementById('exRecordedBy').value=currentRole;
+  clearBill();
+  updateSubCats();
+  document.getElementById('mExpense').style.display='flex';
+}
+function openEditExpenseModal(id) {
+  const e = DB.expenses.find(x=>x.id===id);
+  if (!e) return;
+  editingExpenseId = id;
+  document.getElementById('mExpenseTitle').textContent = '✏️ Edit Expense';
+  document.getElementById('exDate').value = e.date;
+  document.getElementById('exAmt').value = e.amount;
+  document.getElementById('exCat').value = e.category;
+  updateSubCats();
+  document.getElementById('exSub').value = e.subCategory||'';
+  document.getElementById('exVendor').value = e.vendor||'';
+  document.getElementById('exMode').value = e.paymentMode||'ICICI Bank';
+  document.getElementById('exStatus').value = e.paymentStatus||'Paid';
+  document.getElementById('exPaidBy').value = e.paidBy||'';
+  document.getElementById('exNotes').value = e.notes||'';
+  document.getElementById('exRecordedBy').value = e.recordedBy||currentRole;
+  billImageData = e.billImage||null;
+  if (billImageData) { document.getElementById('exBillImg').src=billImageData; document.getElementById('exBillPreview').style.display='block'; }
+  else { document.getElementById('exBillPreview').style.display='none'; }
+  document.getElementById('mExpense').style.display='flex';
+}
+function handleBillUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    const img = new Image();
+    img.onload = function() {
+      const MAX=900, canvas=document.createElement('canvas');
+      let w=img.width, h=img.height;
+      if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}
+      if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}
+      canvas.width=w; canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      const data=canvas.toDataURL('image/jpeg',0.65);
+      if(data.length>600000){toast('Image too large — try a smaller photo','red');return;}
+      billImageData=data;
+      document.getElementById('exBillImg').src=data;
+      document.getElementById('exBillPreview').style.display='block';
+    };
+    img.src=ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+function clearBill() {
+  billImageData=null;
+  document.getElementById('exBillFile').value='';
+  document.getElementById('exBillPreview').style.display='none';
+}
+function viewBill(id) {
+  const e=DB.expenses.find(x=>x.id===id);
+  if(!e||!e.billImage) return;
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><title>Bill — ${fmtDate(e.date)} ₹${fmt(+e.amount)}</title><style>body{margin:0;background:#1e293b;display:flex;justify-content:center;align-items:flex-start;min-height:100vh;padding:20px;box-sizing:border-box}img{max-width:100%;border-radius:8px}</style></head><body><img src="${e.billImage}"></body></html>`);
+}
+function updateSubCats() {
+  const cat=document.getElementById('exCat').value;
+  document.getElementById('exSub').innerHTML='<option value="">—</option>'+(EXP_SUBS[cat]||[]).map(s=>`<option>${s}</option>`).join('');
+}
+async function saveExpense() {
+  const date=document.getElementById('exDate').value, cat=document.getElementById('exCat').value, amt=document.getElementById('exAmt').value;
+  if(!date||!cat||!amt){toast('Date, Category, Amount required','red');return;}
+  const fields = { date, category:cat, subCategory:document.getElementById('exSub').value,
+    vendor:document.getElementById('exVendor').value, amount:+amt,
+    paymentMode:document.getElementById('exMode').value,
+    paymentStatus:document.getElementById('exStatus').value,
+    paidBy:document.getElementById('exPaidBy').value,
+    notes:document.getElementById('exNotes').value,
+    recordedBy:document.getElementById('exRecordedBy').value,
+    billImage: billImageData||null };
+  if (editingExpenseId) {
+    const idx=DB.expenses.findIndex(e=>e.id===editingExpenseId);
+    if(idx>=0) Object.assign(DB.expenses[idx], fields);
+    await persist('Expense updated ✅');
+  } else {
+    const expTime=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true});
+    DB.expenses.push({ id:uid('EXP'), time:expTime, ...fields });
+    await persist('Expense saved ✅');
+  }
+  closeModal('mExpense'); renderExpenses();
+}
+async function delExpense(id) {
+  if(!confirm('Delete this expense?'))return;
+  DB.expenses=DB.expenses.filter(e=>e.id!==id);
+  await persist('Deleted'); renderExpenses();
+}
+async function toggleExpenseStatus(id) {
+  const e = DB.expenses.find(x=>x.id===id);
+  if(!e) return;
+  e.paymentStatus = (e.paymentStatus==='Yet to be paid') ? 'Paid' : 'Yet to be paid';
+  await persist('Status updated'); renderExpenses();
+}
+
+// ─────────────────────────────────────────────────────────────────
+// FD TRACKER
+// ─────────────────────────────────────────────────────────────────
+function renderFDs() {
+  const open=DB.fds.filter(f=>f.status!=='Closed');
+  const totalAmt=open.reduce((s,f)=>s+Number(f.amount),0);
+  const totalMat=open.reduce((s,f)=>s+(Number(f.maturityValue)||0),0);
+  const maturing=open.filter(f=>{const d=(new Date(f.maturityDate)-now)/86400000;return d>=0&&d<=30;}).length;
+
+  document.getElementById('fdSummary').innerHTML=`
+    <div class="stat blue"><div style="opacity:.8;font-size:.78rem">Open FDs</div><div style="font-size:1.35rem;font-weight:800;margin-top:3px">${open.length}</div></div>
+    <div class="stat green"><div style="opacity:.8;font-size:.78rem">Total Invested</div><div style="font-size:1.35rem;font-weight:800;margin-top:3px">₹${fmt(totalAmt)}</div></div>
+    <div class="stat teal"><div style="opacity:.8;font-size:.78rem">Total at Maturity</div><div style="font-size:1.35rem;font-weight:800;margin-top:3px">₹${fmt(totalMat)}</div></div>
+    ${maturing?`<div class="stat red"><div style="opacity:.8;font-size:.78rem">⚠ Maturing in 30d</div><div style="font-size:1.35rem;font-weight:800;margin-top:3px">${maturing} FD(s)</div></div>`:''}`;
+
+  document.getElementById('fdTbody').innerHTML=open.length
+    ? open.sort((a,b)=>new Date(a.maturityDate)-new Date(b.maturityDate)).map(f=>{
+        const d=Math.round((new Date(f.maturityDate)-now)/86400000);
+        const dBadge=f.status==='Closed'?'—':d<0?`<span class="badge-pending">Matured ${-d}d ago</span>`:d<=30?`<span class="badge-pending">${d}d</span>`:`<span style="color:#15803d">${d}d</span>`;
+        return `<tr>
+          <td>${f.bank}</td><td style="font-size:.78rem">${f.fdNumber}</td>
+          <td>₹${fmt(+f.amount)}</td><td>${fmtDate(f.dateOpened)}</td><td>${fmtDate(f.maturityDate)}</td>
+          <td>${f.roi}%</td><td>₹${fmt(+(f.maturityValue||0))}</td><td>${dBadge}</td>
+          <td><span class="badge-${f.status==='Open'?'open':'closed'}">${f.status}</span></td>
+          <td style="white-space:nowrap">
+            <button class="btn btn-primary rw" style="padding:3px 8px;font-size:.78rem" onclick="openEditFDModal('${f.id}')">Edit</button>
+            ${f.status==='Open'?`<button class="btn-danger rw" style="margin-left:4px" onclick="closeFD('${f.id}')">Close</button>`:''}
+          </td>
+        </tr>`;
+      }).join('')
+    : '<tr><td colspan="10" style="text-align:center;color:#94a3b8;padding:24px">No FDs recorded yet</td></tr>';
+}
+
+function showFDModal() {
+  document.getElementById('fdEditId').value = '';
+  document.getElementById('mFDTitle').textContent = '🏦 Add Fixed Deposit';
+  ['fdNo','fdAmt','fdROI','fdMatVal','fdNotes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fdOpen').value=toDateVal(now);
+  document.getElementById('fdMature').value='';
+  document.getElementById('fdStat').value='Open';
+  document.getElementById('mFD').style.display='flex';
+}
+function openEditFDModal(id) {
+  const f = DB.fds.find(x=>x.id===id);
+  if (!f) return;
+  document.getElementById('fdEditId').value  = id;
+  document.getElementById('mFDTitle').textContent = '✏️ Edit Fixed Deposit';
+  document.getElementById('fdBank').value    = f.bank;
+  document.getElementById('fdNo').value      = f.fdNumber;
+  document.getElementById('fdAmt').value     = f.amount;
+  document.getElementById('fdROI').value     = f.roi;
+  document.getElementById('fdOpen').value    = f.dateOpened;
+  document.getElementById('fdMature').value  = f.maturityDate;
+  document.getElementById('fdMatVal').value  = f.maturityValue||'';
+  document.getElementById('fdStat').value    = f.status;
+  document.getElementById('fdNotes').value   = f.notes||'';
+  document.getElementById('mFD').style.display='flex';
+}
+function calcMaturity() {
+  const amt=+document.getElementById('fdAmt').value, roi=+document.getElementById('fdROI').value/100;
+  const d1=document.getElementById('fdOpen').value, d2=document.getElementById('fdMature').value;
+  if(amt&&roi&&d1&&d2){
+    const days=(new Date(d2)-new Date(d1))/86400000;
+    document.getElementById('fdMatVal').value=Math.round(amt*(1+roi*days/365));
+  }
+}
+async function saveFD() {
+  const editId = document.getElementById('fdEditId').value;
+  const bank=document.getElementById('fdBank').value, no=document.getElementById('fdNo').value.trim();
+  const amt=document.getElementById('fdAmt').value, roi=document.getElementById('fdROI').value;
+  const d1=document.getElementById('fdOpen').value, d2=document.getElementById('fdMature').value;
+  if(!bank||!no||!amt||!roi||!d1||!d2){toast('All starred fields required','red');return;}
+  if (editId) {
+    const f = DB.fds.find(x=>x.id===editId);
+    if (f) { f.bank=bank; f.fdNumber=no; f.amount=+amt; f.roi=+roi; f.dateOpened=d1; f.maturityDate=d2;
+      f.maturityValue=+(document.getElementById('fdMatVal').value)||0;
+      f.status=document.getElementById('fdStat').value; f.notes=document.getElementById('fdNotes').value; }
+    await persist('FD updated ✅');
+  } else {
+    DB.fds.push({ id:uid('FD'), bank, fdNumber:no, amount:+amt, dateOpened:d1, maturityDate:d2,
+      roi:+roi, maturityValue:+(document.getElementById('fdMatVal').value)||0,
+      status:document.getElementById('fdStat').value, notes:document.getElementById('fdNotes').value });
+    await persist('FD added ✅');
+  }
+  closeModal('mFD'); renderFDs();
+}
+async function closeFD(id) {
+  if(!confirm('Mark this FD as Closed?'))return;
+  const fd=DB.fds.find(f=>f.id===id);
+  if(fd) fd.status='Closed';
+  await persist('FD closed'); renderFDs();
+}
+
+// ─────────────────────────────────────────────────────────────────
+// BANK & CASH
+// ─────────────────────────────────────────────────────────────────
+function renderBanks() {
+  const total=DB.banks.reduce((s,b)=>s+Number(b.balance),0);
+  document.getElementById('bankSummary').innerHTML=`
+    <div class="stat blue"><div style="opacity:.8;font-size:.78rem">Total Bank Balance</div><div style="font-size:1.35rem;font-weight:800;margin-top:3px">₹${fmt(total)}</div></div>
+    ${DB.banks.map(b=>`<div class="card" style="border-left:4px solid #2563eb;padding:14px"><div style="font-size:.78rem;color:#64748b">${b.bankName}</div><div style="font-weight:800;font-size:1.05rem;margin-top:2px">₹${fmt(+b.balance)}</div><div style="font-size:.7rem;color:#94a3b8">as on ${fmtDate(b.asOnDate)}</div></div>`).join('')}`;
+  document.getElementById('bankTbody').innerHTML=DB.banks.length
+    ? DB.banks.map(b=>`<tr>
+        <td><b>${b.bankName}</b></td><td>${b.accountNo||'—'}</td>
+        <td style="font-weight:700">₹${fmt(+b.balance)}</td><td>${fmtDate(b.asOnDate)}</td><td>${b.notes||'—'}</td>
+        <td><button class="btn btn-primary rw" style="padding:3px 10px;font-size:.78rem" onclick='prefillBank("${esc(b.bankName)}","${b.accountNo}",${b.balance})'>Edit</button></td>
+      </tr>`).join('')
+    : '<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:24px">No bank accounts. Add one to get started.</td></tr>';
+  renderFunds();
+  renderAssets();
+}
+
+function showBankModal() {
+  ['bkName','bkAcc','bkBal','bkNotes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('bkDate').value=toDateVal(now);
+  document.getElementById('mBank').style.display='flex';
+}
+function prefillBank(name,acc,bal) {
+  document.getElementById('bkName').value=name;
+  document.getElementById('bkAcc').value=acc;
+  document.getElementById('bkBal').value=bal;
+  document.getElementById('bkDate').value=toDateVal(now);
+  document.getElementById('mBank').style.display='flex';
+}
+async function saveBank() {
+  const name=document.getElementById('bkName').value.trim();
+  const bal=document.getElementById('bkBal').value, date=document.getElementById('bkDate').value;
+  if(!name||!bal||!date){toast('Name, Balance and Date required','red');return;}
+  const existing=DB.banks.find(b=>b.bankName===name);
+  if(existing){ existing.balance=+bal; existing.asOnDate=date; existing.accountNo=document.getElementById('bkAcc').value; existing.notes=document.getElementById('bkNotes').value; }
+  else { DB.banks.push({ bankName:name, accountNo:document.getElementById('bkAcc').value, balance:+bal, asOnDate:date, notes:document.getElementById('bkNotes').value }); }
+  await persist('Bank balance updated ✅'); closeModal('mBank'); renderBanks();
+}
+
+// ── Funds ─────────────────────────────────────────────────────────
+function renderFunds() {
+  if (!DB.funds) DB.funds = [];
+  const total = DB.funds.reduce((s,f)=>s+Number(f.amount),0);
+  const bycat = {};
+  DB.funds.forEach(f=>{ bycat[f.category]=(bycat[f.category]||0)+Number(f.amount); });
+  document.getElementById('fundSummary').innerHTML =
+    `<div class="stat" style="background:#7c3aed"><div style="opacity:.8;font-size:.78rem">Total Funds</div><div style="font-size:1.35rem;font-weight:800;margin-top:3px">₹${fmt(total)}</div></div>`
+    + Object.entries(bycat).map(([k,v])=>`<div class="card" style="border-left:4px solid #7c3aed;padding:14px"><div style="font-size:.78rem;color:#64748b">${k}</div><div style="font-weight:800;font-size:1.05rem;margin-top:2px">₹${fmt(v)}</div></div>`).join('');
+  document.getElementById('fundTbody').innerHTML = DB.funds.length
+    ? DB.funds.map(f=>`<tr>
+        <td><b>${f.name}</b></td><td><span style="background:#ede9fe;color:#6d28d9;border-radius:99px;padding:2px 8px;font-size:.75rem;font-weight:600">${f.category}</span></td>
+        <td style="font-weight:700">₹${fmt(+f.amount)}</td><td>${fmtDate(f.asOnDate)}</td><td>${f.notes||'—'}</td>
+        <td style="white-space:nowrap">
+          <button class="btn btn-primary rw" style="padding:3px 10px;font-size:.78rem" onclick="openEditFundModal('${f.id}')">Edit</button>
+          <button class="btn-danger rw" style="margin-left:4px" onclick="delFund('${f.id}')">✕</button>
+        </td>
+      </tr>`).join('')
+    : '<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:24px">No funds. Use ⚙ Setup → Load Audit Data to populate.</td></tr>';
+}
+
+function showFundModal() {
+  document.getElementById('fundEditId').value='';
+  document.getElementById('fuName').value='';
+  document.getElementById('fuCat').value='Reserves & Surplus';
+  document.getElementById('fuAmt').value='';
+  document.getElementById('fuDate').value=toDateVal(now);
+  document.getElementById('fuNotes').value='';
+  document.getElementById('mFundTitle').textContent='🏛 Add Fund';
+  document.getElementById('mFund').style.display='flex';
+}
+
+function openEditFundModal(id) {
+  const f=(DB.funds||[]).find(x=>x.id===id); if(!f)return;
+  document.getElementById('fundEditId').value=id;
+  document.getElementById('fuName').value=f.name;
+  document.getElementById('fuCat').value=f.category||'Reserves & Surplus';
+  document.getElementById('fuAmt').value=f.amount;
+  document.getElementById('fuDate').value=f.asOnDate;
+  document.getElementById('fuNotes').value=f.notes||'';
+  document.getElementById('mFundTitle').textContent='✏️ Edit Fund';
+  document.getElementById('mFund').style.display='flex';
+}
+
+async function saveFund() {
+  const editId=document.getElementById('fundEditId').value;
+  const name=document.getElementById('fuName').value.trim();
+  const amt=document.getElementById('fuAmt').value, date=document.getElementById('fuDate').value;
+  if(!name||!amt||!date){toast('Name, Amount and Date required','red');return;}
+  if(!DB.funds) DB.funds=[];
+  if(editId) {
+    const f=DB.funds.find(x=>x.id===editId);
+    if(f){f.name=name;f.category=document.getElementById('fuCat').value;f.amount=+amt;f.asOnDate=date;f.notes=document.getElementById('fuNotes').value;}
+    await persist('Fund updated ✅');
+  } else {
+    DB.funds.push({id:uid('FND'),name,category:document.getElementById('fuCat').value,amount:+amt,asOnDate:date,notes:document.getElementById('fuNotes').value});
+    await persist('Fund saved ✅');
+  }
+  closeModal('mFund'); renderBanks();
+}
+
+async function delFund(id) {
+  if(!confirm('Delete this fund?'))return;
+  DB.funds=(DB.funds||[]).filter(f=>f.id!==id);
+  await persist('Fund deleted'); renderBanks();
+}
+
+// ── Fixed Assets ──────────────────────────────────────────────────
+function renderAssets() {
+  if (!DB.assets) DB.assets = [];
+  const total = DB.assets.reduce((s,a)=>s+Number(a.value),0);
+  document.getElementById('assetSummary').innerHTML =
+    `<div class="stat" style="background:#0f766e"><div style="opacity:.8;font-size:.78rem">Total Book Value</div><div style="font-size:1.35rem;font-weight:800;margin-top:3px">₹${fmt(total)}</div></div>
+     <div class="stat" style="background:#374151"><div style="opacity:.8;font-size:.78rem">Asset Items</div><div style="font-size:1.35rem;font-weight:800;margin-top:3px">${DB.assets.length}</div></div>`;
+  document.getElementById('assetTbody').innerHTML = DB.assets.length
+    ? DB.assets.map(a=>`<tr>
+        <td><b>${a.name}</b></td>
+        <td style="font-weight:700">₹${fmt(+a.value)}</td><td>${fmtDate(a.asOnDate)}</td><td>${a.notes||'—'}</td>
+        <td style="white-space:nowrap">
+          <button class="btn btn-primary rw" style="padding:3px 10px;font-size:.78rem" onclick="openEditAssetModal('${a.id}')">Edit</button>
+          <button class="btn-danger rw" style="margin-left:4px" onclick="delAsset('${a.id}')">✕</button>
+        </td>
+      </tr>`).join('')
+    : '<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:24px">No assets. Use ⚙ Setup → Load Audit Data to populate.</td></tr>';
+}
+
+function showAssetModal() {
+  document.getElementById('assetEditId').value='';
+  document.getElementById('astName').value='';
+  document.getElementById('astVal').value='';
+  document.getElementById('astDate').value=toDateVal(now);
+  document.getElementById('astNotes').value='';
+  document.getElementById('mAssetTitle').textContent='🏗 Add Fixed Asset';
+  document.getElementById('mAsset').style.display='flex';
+}
+
+function openEditAssetModal(id) {
+  const a=(DB.assets||[]).find(x=>x.id===id); if(!a)return;
+  document.getElementById('assetEditId').value=id;
+  document.getElementById('astName').value=a.name;
+  document.getElementById('astVal').value=a.value;
+  document.getElementById('astDate').value=a.asOnDate;
+  document.getElementById('astNotes').value=a.notes||'';
+  document.getElementById('mAssetTitle').textContent='✏️ Edit Fixed Asset';
+  document.getElementById('mAsset').style.display='flex';
+}
+
+async function saveAsset() {
+  const editId=document.getElementById('assetEditId').value;
+  const name=document.getElementById('astName').value.trim();
+  const val=document.getElementById('astVal').value, date=document.getElementById('astDate').value;
+  if(!name||!val||!date){toast('Name, Value and Date required','red');return;}
+  if(!DB.assets) DB.assets=[];
+  if(editId) {
+    const a=DB.assets.find(x=>x.id===editId);
+    if(a){a.name=name;a.value=+val;a.asOnDate=date;a.notes=document.getElementById('astNotes').value;}
+    await persist('Asset updated ✅');
+  } else {
+    DB.assets.push({id:uid('AST'),name,value:+val,asOnDate:date,notes:document.getElementById('astNotes').value});
+    await persist('Asset saved ✅');
+  }
+  closeModal('mAsset'); renderBanks();
+}
+
+async function delAsset(id) {
+  if(!confirm('Delete this asset?'))return;
+  DB.assets=(DB.assets||[]).filter(a=>a.id!==id);
+  await persist('Asset deleted'); renderBanks();
+}
+
+// ─────────────────────────────────────────────────────────────────
+// MEMBERS
+// ─────────────────────────────────────────────────────────────────
+function renderMembers() {
+  const q=(document.getElementById('memberSearch').value||'').toLowerCase();
+  const rows=DB.members
+    .filter(m=>!q||m.unitNo.toLowerCase().includes(q)||m.ownerName.toLowerCase().includes(q))
+    .sort((a,b)=>a.unitNo.localeCompare(b.unitNo));
+  document.getElementById('memberTbody').innerHTML=rows.length
+    ? rows.map(m=>`<tr>
+        <td><b>${m.unitNo}</b></td><td>${m.ownerName}</td><td>${m.phone||'—'}</td>
+        <td class="sm-hide">${m.email||'—'}</td>
+        <td style="white-space:nowrap">
+          <button class="btn btn-primary rw" style="padding:3px 10px;font-size:.78rem" onclick="openEditMemberModal('${esc(m.unitNo)}')">Edit</button>
+          <button class="btn-danger rw" style="margin-left:4px" onclick="delMember('${esc(m.unitNo)}')">✕</button>
+        </td>
+      </tr>`).join('')
+    : '<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:24px">No members. Use "+ Add Member" to start.</td></tr>';
+}
+
+function showMemberModal() {
+  document.getElementById('mbEditUnit').value = '';
+  document.getElementById('mbUnit').disabled  = false;
+  document.getElementById('mbMaintRow').style.display = '';
+  document.getElementById('mMemberTitle').textContent = '👤 Add Member';
+  ['mbUnit','mbName','mbPhone','mbEmail','mbMaint','mbType'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('mMember').style.display='flex';
+}
+function openEditMemberModal(unit) {
+  const m = DB.members.find(x=>x.unitNo===unit);
+  if (!m) return;
+  document.getElementById('mbEditUnit').value       = unit;
+  document.getElementById('mbUnit').value           = m.unitNo;
+  document.getElementById('mbUnit').disabled        = true;
+  document.getElementById('mbName').value           = m.ownerName;
+  document.getElementById('mbPhone').value          = m.phone||'';
+  document.getElementById('mbEmail').value          = m.email||'';
+  document.getElementById('mbType').value           = m.flatType||'';
+  document.getElementById('mbMaintRow').style.display = 'none';
+  document.getElementById('mMemberTitle').textContent = '✏️ Edit Member';
+  document.getElementById('mMember').style.display  = 'flex';
+}
+async function saveMember() {
+  const editUnit = document.getElementById('mbEditUnit').value;
+  const unit  = editUnit || document.getElementById('mbUnit').value.trim();
+  const name  = document.getElementById('mbName').value.trim();
+  if (editUnit) {
+    if (!unit||!name) { toast('Unit and Name are required', 'red'); return; }
+    const m = DB.members.find(x=>x.unitNo===editUnit);
+    if (m) { m.ownerName=name; m.phone=document.getElementById('mbPhone').value;
+      m.email=document.getElementById('mbEmail').value;
+      m.flatType=document.getElementById('mbType').value; }
+    await persist('Member updated ✅');
+  } else {
+    const maint = document.getElementById('mbMaint').value;
+    if(!unit||!name||!maint){toast('Unit, Name and Maintenance are required','red');return;}
+    if(DB.members.find(m=>m.unitNo===unit)){toast('Unit '+unit+' already exists','red');return;}
+    DB.members.push({ unitNo:unit, ownerName:name, phone:document.getElementById('mbPhone').value,
+      email:document.getElementById('mbEmail').value, monthlyMaintenance:+maint, flatType:document.getElementById('mbType').value });
+    await persist('Member added ✅');
+  }
+  closeModal('mMember'); renderMembers();
+}
+async function delMember(unit) {
+  if(!confirm(`Remove ${unit} from members list?`))return;
+  DB.members=DB.members.filter(m=>m.unitNo!==unit);
+  await persist('Member removed'); renderMembers();
+}
+
+// ─────────────────────────────────────────────────────────────────
+// MAINTENANCE
+// ─────────────────────────────────────────────────────────────────
+function renderMaintenance() {
+  const m = +document.getElementById('maintMonth').value;
+  const y = +document.getElementById('maintYear').value;
+  const q = (document.getElementById('maintSearch')?.value||'').toLowerCase();
+
+  const monthPay = DB.payments.filter(p => +p.month===m && +p.year===y);
+  const paidMap  = {};
+  monthPay.forEach(p => { paidMap[p.unitNo] = (paidMap[p.unitNo]||0)+Number(p.amount); });
+
+  const all     = DB.members.slice().sort((a,b)=>a.unitNo.localeCompare(b.unitNo));
+  const members = q ? all.filter(mb=>mb.unitNo.toLowerCase().includes(q)||mb.ownerName.toLowerCase().includes(q)) : all;
+
+  // Totals always based on all members (not filtered)
+  let expected=0, collected=0, pending=0;
+  all.forEach(mb => {
+    const exp  = Number(mb.monthlyMaintenance)||0;
+    const paid = paidMap[mb.unitNo]||0;
+    expected += exp;
+    collected += Math.min(paid, exp);
+    if(exp - paid > 0) pending += (exp - paid);
+  });
+  const totalPriorDues = all.reduce((s,mb)=>s+Math.max(0,Number(mb.openingDue)||0),0);
+
+  document.getElementById('maintSummary').innerHTML = `
+    <div class="stat green"><div style="opacity:.8;font-size:.78rem">Collected This Month</div><div style="font-size:1.35rem;font-weight:800;margin-top:3px">₹${fmt(collected)}</div></div>
+    <div class="stat red"><div style="opacity:.8;font-size:.78rem">Pending This Month</div><div style="font-size:1.35rem;font-weight:800;margin-top:3px">₹${fmt(pending)}</div></div>
+    <div class="stat blue"><div style="opacity:.8;font-size:.78rem">Expected This Month</div><div style="font-size:1.35rem;font-weight:800;margin-top:3px">₹${fmt(expected)}</div></div>
+    ${totalPriorDues>0?`<div class="stat orange"><div style="opacity:.8;font-size:.78rem">Prior Outstanding (pre Apr'26)</div><div style="font-size:1.35rem;font-weight:800;margin-top:3px">₹${fmt(totalPriorDues)}</div></div>`:''}
+    <div class="stat" style="background:linear-gradient(135deg,#1e40af,#3b82f6)"><div style="opacity:.8;font-size:.78rem">Collection %</div><div style="font-size:1.35rem;font-weight:800;margin-top:3px">${expected?Math.round(collected/expected*100):0}%</div></div>`;
+
+  document.getElementById('maintTbody').innerHTML = members.length
+    ? members.map((mb,i) => {
+        const exp   = Number(mb.monthlyMaintenance)||0;
+        const paid  = paidMap[mb.unitNo]||0;
+        const prior = Number(mb.openingDue)||0;
+        const badge = paid<=0 ? '<span class="badge-pending">Pending</span>'
+          : paid>=exp ? '<span class="badge-paid">Paid ✓</span>'
+          : `<span class="badge-pending">Partial</span>`;
+        const editPBtn = `<button class="rw" style="background:none;border:none;cursor:pointer;font-size:.78rem;color:#94a3b8;padding:0 0 0 4px" title="Edit prior due" onclick='openEditPriorDueModal("${esc(mb.unitNo)}",${prior})'>✎</button>`;
+        const priorCell = prior>0
+          ? `<td style="color:#dc2626;font-weight:600;font-size:.82rem">₹${fmt(prior)} ${editPBtn}</td>`
+          : prior<0
+            ? `<td style="color:#2563eb;font-size:.82rem">Adv ₹${fmt(-prior)} ${editPBtn}</td>`
+            : `<td style="color:#94a3b8">— ${editPBtn}</td>`;
+        return `<tr>
+          <td style="color:#94a3b8;font-size:.78rem">${i+1}</td>
+          <td><b>${mb.unitNo}</b></td>
+          <td>${mb.ownerName}</td>
+          <td>₹${fmt(exp)}</td>
+          ${priorCell}
+          <td>${badge}</td>
+          <td>
+            <button class="btn btn-secondary rw" style="padding:3px 10px;font-size:.78rem" onclick='openEditMaintModal("${esc(mb.unitNo)}",${mb.monthlyMaintenance})'>Edit ₹</button>
+            <button class="btn btn-primary rw" style="padding:3px 10px;font-size:.78rem;margin-left:4px" onclick='openPayModal("${esc(mb.unitNo)}","${esc(mb.ownerName)}",${mb.monthlyMaintenance},${m},${y})'>+ Pay</button>
+          </td>
+        </tr>`;
+      }).join('')
+    : '<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:24px">No members loaded yet. Use Members tab to add members.</td></tr>';
+}
+
+function openEditMaintModal(unit, amt) {
+  document.getElementById('emUnit').value        = unit;
+  document.getElementById('emUnitDisplay').value = unit;
+  document.getElementById('emAmt').value         = amt;
+  document.getElementById('mEditMaint').style.display = 'flex';
+}
+
+async function saveMaintAmount() {
+  const unit = document.getElementById('emUnit').value;
+  const amt  = +document.getElementById('emAmt').value;
+  if (!amt || amt <= 0) { toast('Enter a valid amount', 'red'); return; }
+  const m = DB.members.find(x=>x.unitNo===unit);
+  if (m) m.monthlyMaintenance = amt;
+  await persist(`Maintenance for ${unit} updated ✅`);
+  closeModal('mEditMaint');
+  renderMaintenance();
+}
+
+function openEditPriorDueModal(unit, amount) {
+  document.getElementById('pdUnit').value        = unit;
+  document.getElementById('pdUnitDisplay').value = unit;
+  document.getElementById('pdAmt').value         = amount;
+  document.getElementById('mPriorDue').style.display = 'flex';
+}
+
+async function savePriorDue() {
+  const unit = document.getElementById('pdUnit').value;
+  const raw  = document.getElementById('pdAmt').value;
+  if (raw === '' || raw === null) { toast('Enter an amount (0 to clear)', 'red'); return; }
+  const m = DB.members.find(x=>x.unitNo===unit);
+  if (m) m.openingDue = +raw;
+  await persist(`Prior dues for ${unit} updated ✅`);
+  closeModal('mPriorDue');
+  renderMaintenance();
+}
+
+// ─────────────────────────────────────────────────────────────────
+// NOTES
+// ─────────────────────────────────────────────────────────────────
+function renderNotes() {
+  if (!DB.notes) DB.notes = [];
+  const notes = DB.notes.slice().sort((a,b)=>new Date(b.date)-new Date(a.date));
+  document.getElementById('notesList').innerHTML = notes.length
+    ? notes.map(n=>`
+        <div class="card" style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:10px">
+            <div>
+              ${n.title ? `<div style="font-weight:700;font-size:.93rem;margin-bottom:3px">${n.title}</div>` : ''}
+              <div style="color:#64748b;font-size:.78rem">📅 ${fmtDate(n.date)}${n.time ? ' &nbsp;🕐 '+n.time : ''}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+              <span style="background:#eff6ff;color:#1d4ed8;border-radius:99px;padding:2px 10px;font-size:.75rem;font-weight:600">${roleName(n.recordedBy)}</span>
+              <button class="btn btn-primary rw" style="padding:3px 10px;font-size:.78rem" onclick="openEditNoteModal('${n.id}')">Edit</button>
+              <button class="btn-danger rw" onclick="delNote('${n.id}')">✕</button>
+            </div>
+          </div>
+          <p style="font-size:.87rem;color:#374151;margin:0;white-space:pre-wrap;line-height:1.6">${n.text}</p>
+        </div>`).join('')
+    : '<div class="card" style="text-align:center;color:#94a3b8;padding:40px;font-size:.88rem">No notes yet. Click <b>+ Add Note</b> to record the first committee note.</div>';
+}
+
+function showNoteModal() {
+  document.getElementById('ntEditId').value = '';
+  document.getElementById('ntDate').value   = toDateVal(now);
+  document.getElementById('ntTitle').value  = '';
+  document.getElementById('ntText').value   = '';
+  document.getElementById('mNoteTitle').textContent = '📝 Add Note';
+  document.getElementById('mNote').style.display = 'flex';
+}
+
+function openEditNoteModal(id) {
+  const n = (DB.notes||[]).find(x=>x.id===id);
+  if (!n) return;
+  document.getElementById('ntEditId').value = id;
+  document.getElementById('ntDate').value   = n.date;
+  document.getElementById('ntTitle').value  = n.title||'';
+  document.getElementById('ntText').value   = n.text;
+  document.getElementById('mNoteTitle').textContent = '✏️ Edit Note';
+  document.getElementById('mNote').style.display = 'flex';
+}
+
+async function saveNote() {
+  const date   = document.getElementById('ntDate').value;
+  const text   = document.getElementById('ntText').value.trim();
+  const editId = document.getElementById('ntEditId').value;
+  if (!date || !text) { toast('Date and Note text are required', 'red'); return; }
+  if (!DB.notes) DB.notes = [];
+  if (editId) {
+    const n = DB.notes.find(x=>x.id===editId);
+    if (n) { n.date=date; n.title=document.getElementById('ntTitle').value.trim(); n.text=text; }
+    await persist('Note updated ✅');
+  } else {
+    const timeNow = new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true});
+    DB.notes.push({ id:uid('NOTE'), date, time:timeNow, title:document.getElementById('ntTitle').value.trim(), text, recordedBy:currentRole });
+    await persist('Note saved ✅');
+  }
+  closeModal('mNote');
+  renderNotes();
+}
+
+async function delNote(id) {
+  if (!confirm('Delete this note?')) return;
+  DB.notes = (DB.notes||[]).filter(n=>n.id!==id);
+  await persist('Note deleted');
+  renderNotes();
+}
+
+// ─────────────────────────────────────────────────────────────────
+// INCOME
+// ─────────────────────────────────────────────────────────────────
+function renderIncome() {
+  const m  = +document.getElementById('incMonth').value;
+  const y  = +document.getElementById('incYear').value;
+  const cf = document.getElementById('incCatFilter').value;
+  if (!DB.income) DB.income = [];
+  let data = DB.income.filter(e => { const d=new Date(e.date); return d.getMonth()+1===m && d.getFullYear()===y; });
+
+  const cats = [...new Set(data.map(e=>e.category))];
+  const prev = document.getElementById('incCatFilter').value;
+  document.getElementById('incCatFilter').innerHTML = '<option value="">All Categories</option>' + cats.map(c=>`<option ${c===prev?'selected':''}>${c}</option>`).join('');
+  if (cf) data = data.filter(e=>e.category===cf);
+
+  const total = data.reduce((s,e)=>s+Number(e.amount),0);
+  const catMap = {};
+  data.forEach(e=>{ catMap[e.category]=(catMap[e.category]||0)+Number(e.amount); });
+
+  document.getElementById('incSummary').innerHTML = `
+    <div class="stat" style="background:#15803d"><div style="opacity:.8;font-size:.78rem">Total Income</div><div style="font-size:1.35rem;font-weight:800;margin-top:3px">₹${fmt(total)}</div></div>
+    <div class="stat" style="background:#1e40af"><div style="opacity:.8;font-size:.78rem">Transactions</div><div style="font-size:1.35rem;font-weight:800;margin-top:3px">${data.length}</div></div>
+    ${Object.entries(catMap).map(([k,v])=>`<div class="card" style="border-left:4px solid #22c55e;padding:12px"><div style="font-size:.75rem;color:#64748b">${k}</div><div style="font-weight:700;font-size:.95rem;margin-top:2px">₹${fmt(v)}</div></div>`).join('')}`;
+
+  document.getElementById('incTbody').innerHTML = data.length
+    ? data.sort((a,b)=>new Date(b.date)-new Date(a.date)).map(e=>`<tr>
+        <td>${fmtDate(e.date)}</td><td>${e.category}</td><td>${e.subCategory||'—'}</td>
+        <td style="font-weight:600">₹${fmt(+e.amount)}</td>
+        <td class="sm-hide" style="color:#64748b;font-size:.82rem">${e.notes||'—'}</td>
+        <td><span style="background:#f0fdf4;color:#15803d;border-radius:99px;padding:2px 8px;font-size:.75rem;font-weight:600;white-space:nowrap">${roleName(e.recordedBy)}</span></td>
+        <td style="white-space:nowrap">
+          <button class="btn btn-primary rw" style="padding:3px 10px;font-size:.78rem" onclick="openEditIncomeModal('${e.id}')">Edit</button>
+          <button class="btn-danger rw" style="margin-left:4px" onclick="delIncome('${e.id}')">✕</button>
+        </td>
+      </tr>`).join('')
+    : '<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:24px">No income entries for this month</td></tr>';
+}
+
+function updateIncSubCats() {
+  const cat = document.getElementById('incCat').value;
+  const subs = (INC_SUBS[cat]||[]);
+  document.getElementById('incSub').innerHTML = '<option value="">—</option>' + subs.map(s=>`<option>${s}</option>`).join('');
+}
+
+function showIncomeModal() {
+  document.getElementById('incEditId').value = '';
+  document.getElementById('incDate').value   = toDateVal(new Date());
+  document.getElementById('incAmt').value    = '';
+  document.getElementById('incCat').value    = '';
+  document.getElementById('incSub').innerHTML = '<option value="">—</option>';
+  document.getElementById('incNotes').value  = '';
+  document.getElementById('incRecordedBy').value = currentRole;
+  document.getElementById('mIncomeTitle').textContent = '💰 Add Income';
+  document.getElementById('mIncome').style.display = 'flex';
+}
+
+function openEditIncomeModal(id) {
+  const e = (DB.income||[]).find(x=>x.id===id);
+  if (!e) return;
+  document.getElementById('incEditId').value = id;
+  document.getElementById('incDate').value   = e.date;
+  document.getElementById('incAmt').value    = e.amount;
+  document.getElementById('incCat').value    = e.category;
+  updateIncSubCats();
+  document.getElementById('incSub').value    = e.subCategory||'';
+  document.getElementById('incNotes').value  = e.notes||'';
+  document.getElementById('incRecordedBy').value = e.recordedBy||currentRole;
+  document.getElementById('mIncomeTitle').textContent = '✏️ Edit Income';
+  document.getElementById('mIncome').style.display = 'flex';
+}
+
+async function saveIncome() {
+  const editId = document.getElementById('incEditId').value;
+  const date   = document.getElementById('incDate').value;
+  const amt    = document.getElementById('incAmt').value;
+  const cat    = document.getElementById('incCat').value;
+  if (!date||!cat||!amt) { toast('Date, Category, Amount required','red'); return; }
+  if (!DB.income) DB.income = [];
+  if (editId) {
+    const e = DB.income.find(x=>x.id===editId);
+    if (e) { e.date=date; e.amount=+amt; e.category=cat;
+      e.subCategory=document.getElementById('incSub').value;
+      e.notes=document.getElementById('incNotes').value; }
+    await persist('Income updated ✅');
+  } else {
+    DB.income.push({ id:uid('INC'), date, category:cat,
+      subCategory:document.getElementById('incSub').value,
+      amount:+amt, notes:document.getElementById('incNotes').value,
+      recordedBy:document.getElementById('incRecordedBy').value });
+    await persist('Income saved ✅');
+  }
+  closeModal('mIncome'); renderIncome();
+}
+
+async function delIncome(id) {
+  if (!confirm('Delete this income entry?')) return;
+  DB.income = (DB.income||[]).filter(e=>e.id!==id);
+  await persist('Income deleted');
+  renderIncome();
+}
+
+// ─────────────────────────────────────────────────────────────────
+// COMMITTEE
+// ─────────────────────────────────────────────────────────────────
+function renderCommittee() {
+  if (!DB.committee) DB.committee = { members:[], responsibilities:[] };
+  const members = DB.committee.members || [];
+  const grid = document.getElementById('commMemberGrid');
+  if (!members.length) {
+    grid.innerHTML = '<div style="color:#6b7280;font-style:italic;padding:10px;grid-column:1/-1">No members added yet. Use Load Audit Data or + Add Member.</div>';
+  } else {
+    grid.innerHTML = members.map((name, i) => `
+      <div class="card" style="padding:14px;display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <div style="font-weight:600;font-size:.9rem">👤 ${h(name)}</div>
+        <button class="btn btn-danger rw" style="padding:2px 8px;font-size:.78rem" onclick="delCommMember(${i})">✕</button>
+      </div>`).join('');
+  }
+  const tbody = document.getElementById('commRespTbody');
+  const resps = DB.committee.responsibilities || [];
+  if (!resps.length) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#6b7280;font-style:italic;padding:12px">No responsibilities added. Use Load Audit Data or + Add Responsibility.</td></tr>';
+  } else {
+    tbody.innerHTML = resps.map(r => `
+      <tr>
+        <td style="font-weight:600">${h(r.task)}</td>
+        <td>${h(r.primary) || '—'}</td>
+        <td>${h(r.secondary) || '—'}</td>
+        <td>
+          <button class="btn btn-secondary rw" style="padding:2px 8px;font-size:.78rem;margin-right:4px" onclick="openEditCommRespModal('${r.id}')">✎</button>
+          <button class="btn btn-danger rw" style="padding:2px 8px;font-size:.78rem" onclick="delCommResp('${r.id}')">✕</button>
+        </td>
+      </tr>`).join('');
+  }
+  const workList = document.getElementById('commWorkList');
+  const works = DB.committee.workItems || [];
+  if (!works.length) {
+    workList.innerHTML = '<div style="color:#6b7280;font-style:italic;padding:10px">No work items added. Use Load Audit Data or + Add Item.</div>';
+  } else {
+    workList.innerHTML = works.map((w, i) => `
+      <div class="card" style="padding:12px 16px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+          <div style="font-size:.9rem;font-weight:600"><span style="color:#6b7280;margin-right:8px">${String.fromCharCode(96+i+1)}.</span>${h(w.text)}</div>
+          <div style="display:flex;gap:6px;flex-shrink:0">
+            <button class="btn btn-secondary rw" style="padding:2px 8px;font-size:.78rem" onclick="openEditCommWorkModal('${w.id}')">✎</button>
+            <button class="btn btn-danger rw" style="padding:2px 8px;font-size:.78rem" onclick="delCommWork('${w.id}')">✕</button>
+          </div>
+        </div>
+        ${w.notes ? `<div style="margin-top:6px;font-size:.82rem;color:#374151;background:#f9fafb;border-left:3px solid #6366f1;padding:6px 10px;border-radius:0 4px 4px 0;white-space:pre-wrap">${h(w.notes)}</div>` : '<div style="margin-top:4px;font-size:.78rem;color:#9ca3af;font-style:italic">No tracking notes yet — click ✎ to add</div>'}
+      </div>`).join('');
+  }
+}
+
+function showCommMemberModal() {
+  document.getElementById('cmName').value = '';
+  document.getElementById('mCommMember').style.display = 'flex';
+}
+
+async function saveCommMember() {
+  const name = document.getElementById('cmName').value.trim();
+  if (!name) { toast('Enter a member name', 'red'); return; }
+  if (!DB.committee) DB.committee = { members:[], responsibilities:[], workItems:[] };
+  DB.committee.members.push(name);
+  await persist('Committee member added');
+  closeModal('mCommMember'); renderCommittee();
+}
+
+async function delCommMember(idx) {
+  if (!confirm('Remove this committee member?')) return;
+  DB.committee.members.splice(idx, 1);
+  await persist('Committee member removed');
+  renderCommittee();
+}
+
+function showCommRespModal() {
+  document.getElementById('crId').value = '';
+  document.getElementById('crTask').value = '';
+  document.getElementById('crPrimary').value = '';
+  document.getElementById('crSecondary').value = '';
+  document.getElementById('mCommRespTitle').textContent = '📋 Add Responsibility';
+  document.getElementById('mCommResp').style.display = 'flex';
+}
+
+function openEditCommRespModal(id) {
+  const r = (DB.committee.responsibilities || []).find(x => x.id === id);
+  if (!r) return;
+  document.getElementById('crId').value = r.id;
+  document.getElementById('crTask').value = r.task;
+  document.getElementById('crPrimary').value = r.primary || '';
+  document.getElementById('crSecondary').value = r.secondary || '';
+  document.getElementById('mCommRespTitle').textContent = '✏️ Edit Responsibility';
+  document.getElementById('mCommResp').style.display = 'flex';
+}
+
+async function saveCommResp() {
+  const editId    = document.getElementById('crId').value.trim();
+  const task      = document.getElementById('crTask').value.trim();
+  const primary   = document.getElementById('crPrimary').value.trim();
+  const secondary = document.getElementById('crSecondary').value.trim();
+  if (!task) { toast('Enter a task / area name', 'red'); return; }
+  if (!DB.committee) DB.committee = { members:[], responsibilities:[], workItems:[] };
+  if (editId) {
+    const r = DB.committee.responsibilities.find(x => x.id === editId);
+    if (r) { r.task = task; r.primary = primary; r.secondary = secondary; }
+  } else {
+    DB.committee.responsibilities.push({ id:'RESP'+Date.now(), task, primary, secondary });
+  }
+  await persist(editId ? 'Responsibility updated' : 'Responsibility added');
+  closeModal('mCommResp'); renderCommittee();
+}
+
+async function delCommResp(id) {
+  if (!confirm('Delete this responsibility?')) return;
+  DB.committee.responsibilities = (DB.committee.responsibilities||[]).filter(x => x.id !== id);
+  await persist('Responsibility deleted');
+  renderCommittee();
+}
+
+function showCommWorkModal() {
+  document.getElementById('cwId').value = '';
+  document.getElementById('cwText').value = '';
+  document.getElementById('cwNotes').value = '';
+  document.getElementById('mCommWorkTitle').textContent = '📌 Add Work Item';
+  document.getElementById('mCommWork').style.display = 'flex';
+}
+
+function openEditCommWorkModal(id) {
+  const w = (DB.committee.workItems||[]).find(x => x.id === id);
+  if (!w) return;
+  document.getElementById('cwId').value = w.id;
+  document.getElementById('cwText').value = w.text;
+  document.getElementById('cwNotes').value = w.notes || '';
+  document.getElementById('mCommWorkTitle').textContent = '✏️ Edit Work Item';
+  document.getElementById('mCommWork').style.display = 'flex';
+}
+
+async function saveCommWork() {
+  const editId = document.getElementById('cwId').value.trim();
+  const text   = document.getElementById('cwText').value.trim();
+  const notes  = document.getElementById('cwNotes').value.trim();
+  if (!text) { toast('Enter a description', 'red'); return; }
+  if (!DB.committee) DB.committee = { members:[], responsibilities:[], workItems:[] };
+  if (!DB.committee.workItems) DB.committee.workItems = [];
+  if (editId) {
+    const w = DB.committee.workItems.find(x => x.id === editId);
+    if (w) { w.text = text; w.notes = notes; }
+  } else {
+    DB.committee.workItems.push({ id:'WORK'+Date.now(), text, notes });
+  }
+  await persist(editId ? 'Work item updated' : 'Work item added');
+  closeModal('mCommWork'); renderCommittee();
+}
+
+async function delCommWork(id) {
+  if (!confirm('Delete this work item?')) return;
+  DB.committee.workItems = (DB.committee.workItems||[]).filter(x => x.id !== id);
+  await persist('Work item deleted');
+  renderCommittee();
+}
+
+// ─────────────────────────────────────────────────────────────────
+// CONTACTS
+// ─────────────────────────────────────────────────────────────────
+function renderContacts() {
+  const contacts = DB.contacts || [];
+  const q = (document.getElementById('contactSearch')?.value || '').toLowerCase();
+
+  const svcSet = new Set(contacts.map(c => c.service));
+  const dl = document.getElementById('serviceList');
+  if (dl) dl.innerHTML = [...svcSet].sort().map(s => `<option value="${h(s)}">`).join('');
+
+  let filtered = contacts;
+  if (q) filtered = contacts.filter(c =>
+    (c.name||'').toLowerCase().includes(q) ||
+    (c.phone||'').includes(q) ||
+    (c.service||'').toLowerCase().includes(q) ||
+    (c.role||'').toLowerCase().includes(q)
+  );
+
+  const groups = {};
+  filtered.forEach(c => { if (!groups[c.service]) groups[c.service] = []; groups[c.service].push(c); });
+
+  const el = document.getElementById('contactsList');
+  if (!el) return;
+  if (filtered.length === 0) {
+    el.innerHTML = `<div class="card" style="text-align:center;color:#6b7280;padding:32px">${
+      contacts.length === 0
+        ? 'No contacts yet — click <b>⚙ Setup → Load Audit Data</b> to load all 27 vendor contacts, or <b>+ Add Contact</b> to add one manually.'
+        : 'No contacts match your search.'
+    }</div>`;
+    return;
+  }
+  el.innerHTML = Object.entries(groups).map(([svc, cons]) => `
+    <div class="card" style="margin-bottom:14px">
+      <h4 style="margin:0 0 12px 0;font-size:.93rem;font-weight:700;color:#1e3a8a;border-bottom:1px solid #e5e7eb;padding-bottom:8px">${h(svc)}</h4>
+      <div style="overflow-x:auto">
+        <table style="min-width:480px">
+          <thead><tr><th>Name</th><th>Role</th><th>Phone</th><th class="sm-hide">Notes</th><th class="rw">Act</th></tr></thead>
+          <tbody>
+            ${cons.map(c => `<tr>
+              <td style="font-weight:600">${h(c.name)}</td>
+              <td style="color:#4b5563;font-size:.85rem">${h(c.role||'—')}</td>
+              <td><a href="tel:${h(c.phone)}" style="color:#2563eb;font-weight:600;text-decoration:none">${h(c.phone||'—')}</a></td>
+              <td class="sm-hide" style="font-size:.82rem;color:#6b7280;max-width:200px;white-space:normal">${h(c.notes||'—')}</td>
+              <td class="rw" style="white-space:nowrap">
+                <button class="btn btn-secondary" onclick="openEditContactModal('${h(c.id)}')" style="padding:3px 8px;font-size:.78rem">✎</button>
+                <button class="btn" onclick="delContact('${h(c.id)}')" style="padding:3px 8px;font-size:.78rem;background:#fee2e2;color:#dc2626">✕</button>
+              </td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`).join('');
+}
+
+function showContactModal() {
+  document.getElementById('mContactTitle').textContent = '📞 Add Contact';
+  document.getElementById('conId').value = '';
+  document.getElementById('conService').value = '';
+  document.getElementById('conName').value = '';
+  document.getElementById('conRole').value = '';
+  document.getElementById('conPhone').value = '';
+  document.getElementById('conNotes').value = '';
+  document.getElementById('mContact').style.display = 'flex';
+}
+
+function openEditContactModal(id) {
+  const c = (DB.contacts || []).find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('mContactTitle').textContent = '✎ Edit Contact';
+  document.getElementById('conId').value = c.id;
+  document.getElementById('conService').value = c.service || '';
+  document.getElementById('conName').value = c.name || '';
+  document.getElementById('conRole').value = c.role || '';
+  document.getElementById('conPhone').value = c.phone || '';
+  document.getElementById('conNotes').value = c.notes || '';
+  document.getElementById('mContact').style.display = 'flex';
+}
+
+async function saveContact() {
+  const id      = document.getElementById('conId').value;
+  const service = document.getElementById('conService').value.trim();
+  const name    = document.getElementById('conName').value.trim();
+  const role    = document.getElementById('conRole').value.trim();
+  const phone   = document.getElementById('conPhone').value.trim();
+  const notes   = document.getElementById('conNotes').value.trim();
+  if (!service) { toast('Service/Category is required', 'red'); return; }
+  if (!name)    { toast('Name is required', 'red'); return; }
+  if (!DB.contacts) DB.contacts = [];
+  if (id) {
+    const c = DB.contacts.find(x => x.id === id);
+    if (c) { c.service = service; c.name = name; c.role = role; c.phone = phone; c.notes = notes; }
+  } else {
+    DB.contacts.push({ id: uid('CON'), service, name, role, phone, notes });
+  }
+  await persist(id ? 'Contact updated ✓' : 'Contact added ✓');
+  closeModal('mContact');
+  renderContacts();
+}
+
+async function delContact(id) {
+  if (!confirm('Delete this contact?')) return;
+  DB.contacts = (DB.contacts || []).filter(c => c.id !== id);
+  await persist('Contact deleted');
+  renderContacts();
+}
+
+// ─────────────────────────────────────────────────────────────────
+// BACKUP & RESTORE
+// ─────────────────────────────────────────────────────────────────
+function exportBackup() {
+  const filename = `madhav_backup_${toDateVal(new Date())}.json`;
+  const blob = new Blob([JSON.stringify(DB, null, 2)], {type:'application/json'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+  const ts = new Date().toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  localStorage.setItem('mac_lastBackup', ts);
+  document.getElementById('lastBackupInfo').textContent = '✅ Last backup: ' + ts;
+  toast('Backup downloaded: ' + filename);
+}
+
+function startAutoRefresh() {
+  if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+  autoRefreshTimer = setInterval(() => {
+    if (API_KEY && BIN_ID && !pendingCloudSave) loadFromBin(false);
+  }, 5 * 60 * 1000);
+}
+
+function startAutoBackup() {
+  if (autoBackupTimer) clearInterval(autoBackupTimer);
+  autoBackupTimer = setInterval(() => {
+    // Show tappable banner (works on all devices including iOS)
+    const banner = document.getElementById('backupBanner');
+    if (banner) banner.style.display = 'block';
+    // Also attempt silent download (works on desktop + Android; iOS ignores it)
+    exportBackup();
+    // Auto-hide banner after 5 minutes if not tapped
+    setTimeout(() => { if (banner) banner.style.display = 'none'; }, 5 * 60 * 1000);
+  }, 2 * 60 * 60 * 1000);
+  const el = document.getElementById('autoBackupStatus');
+  if (el) el.textContent = '✅ Auto-backup ON — every 2 hrs (reminder shown on mobile)';
+}
+
+function importBackup() {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = '.json';
+  input.onchange = async (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      if (!data.members || !data.payments) { toast('Invalid backup file — members/payments missing', 'red'); return; }
+      if (!confirm(`Restore from "${file.name}"?\n\nThis will REPLACE all current data with this backup.\nThis cannot be undone. Continue?`)) return;
+      DB.members  = data.members  || [];
+      DB.payments = data.payments || [];
+      DB.expenses = data.expenses || [];
+      DB.fds      = data.fds      || [];
+      DB.banks    = data.banks    || [];
+      DB.notes    = data.notes    || [];
+      DB.income   = data.income   || [];
+      DB.funds    = data.funds    || [];
+      DB.assets     = data.assets     || [];
+      DB.committee  = data.committee  || { members:[], responsibilities:[] };
+    DB.contacts   = data.contacts   || [];
+      await persist('Data restored from backup ✅');
+      closeModal('mSettings');
+      renderCurrentTab();
+    } catch(err) {
+      toast('Could not read backup: ' + err.message, 'red');
+    }
+  };
+  input.click();
+}
+
+function showLastBackupInfo() {
+  const ts = localStorage.getItem('mac_lastBackup');
+  if (ts) document.getElementById('lastBackupInfo').textContent = '✅ Last backup: ' + ts;
+}
+
+function connectViewer() {
+  localStorage.setItem('mac_readonly', 'true');
+  readOnlyMode = true;
+  document.body.classList.add('readonly');
+  closeModal('mSettings');
+  toast('Connected as Viewer — read-only mode active');
+}
+
+function disconnectViewer() {
+  localStorage.removeItem('mac_readonly');
+  readOnlyMode = false;
+  document.body.classList.remove('readonly');
+  closeModal('mSettings');
+  toast('Viewer mode disabled — full access restored');
+}
+
+// ─────────────────────────────────────────────────────────────────
+// UTILITIES
+// ─────────────────────────────────────────────────────────────────
+function uid(prefix) { return prefix+Date.now()+Math.floor(Math.random()*1000); }
+function esc(s) { return String(s).replace(/"/g,'&quot;'); }
+function h(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fmt(n) { return Number(n).toLocaleString('en-IN',{maximumFractionDigits:2}); }
+function fmtDate(d) {
+  if(!d)return'—';
+  const dt=new Date(d);
+  if(isNaN(dt))return String(d).split('T')[0];
+  return dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+}
+function toDateVal(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+
+let toastTimer;
+function toast(msg, type='green', dur=2800) {
+  const el=document.getElementById('toast');
+  el.textContent=msg;
+  el.style.background=type==='red'?'#dc2626':type==='blue'?'#2563eb':'#15803d';
+  el.style.display='block';
+  clearTimeout(toastTimer);
+  if(dur>0) toastTimer=setTimeout(()=>el.style.display='none', dur);
+}
+
+function closeModal(id) { document.getElementById(id).style.display='none'; }
+document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.style.display='none';}));
+
+// ─────────────────────────────────────────────────────────────────
+// AUDIT SEED DATA  (FY 2025-26, balances as on 31-03-2026)
+// ─────────────────────────────────────────────────────────────────
+const AUDIT_BANKS = [
+  { bankName:'ICICI Bank',          accountNo:'', balance:1150838.54, asOnDate:'2026-03-31', notes:'Audit FY25-26' },
+  { bankName:'Union Bank of India', accountNo:'', balance:242670.84,  asOnDate:'2026-03-31', notes:'Audit FY25-26' },
+  { bankName:'Cash in Hand',        accountNo:'', balance:4242,       asOnDate:'2026-03-31', notes:'Audit FY25-26' }
+];
+
+const AUDIT_FUNDS = [
+  { name:'Building Repair Fund', amount:3185926.37, category:'Reserves & Surplus', asOnDate:'2026-03-31', notes:'Audit FY25-26' },
+  { name:'Road Repair Fund',     amount:312000,     category:'Reserves & Surplus', asOnDate:'2026-03-31', notes:'Audit FY25-26' },
+  { name:'Transfer Fees',        amount:385000,     category:'Reserves & Surplus', asOnDate:'2026-03-31', notes:'Audit FY25-26' },
+  { name:'Corpus Fund',          amount:2931635,    category:'Capital Account',    asOnDate:'2026-03-31', notes:'Audit FY25-26' },
+  { name:'Sinking Fund',         amount:1067404,    category:'Capital Account',    asOnDate:'2026-03-31', notes:'Audit FY25-26' }
+];
+
+const AUDIT_COMMITTEE = {
+  members: [
+    'Gururaj Kanchagar',
+    'Rajendra Gabale',
+    'Advait Kulkarni',
+    'Mandar Nagarkar',
+    'Sangram Pradhan',
+    'Mandar Kulkarni',
+    'Vinod Kadam',
+    'Swati Gadgil',
+    'Milind Sathe'
+  ],
+  responsibilities: [
+    { id:'RESP1', task:'Water Management',           primary:'Milind Sathe',     secondary:'Jigar Ajmera' },
+    { id:'RESP2', task:'Genset Maintenance',         primary:'Mandar Kulkarni',  secondary:'Vinod Kadam' },
+    { id:'RESP3', task:'Waste Management',           primary:'Onkar Mitragotri', secondary:'Sangram Pradhan' },
+    { id:'RESP4', task:'Electricity Related Work',   primary:'Sachin Paldhikar', secondary:'Chintaman Jagtap' },
+    { id:'RESP5', task:'Lift Maintenance',           primary:'Ravikumar Mishra', secondary:'Amol Dandade' },
+    { id:'RESP6', task:'Solar Power and Borewell/Water-harvesting', primary:'Mukund Soman', secondary:'Kaustubh Kulkarni' }
+  ],
+  workItems: [
+    { id:'WORK1',  text:'Security Management' },
+    { id:'WORK2',  text:'Parking Management' },
+    { id:'WORK3',  text:'Fire Management' },
+    { id:'WORK4',  text:'Societyrun App Issues Maintenance' },
+    { id:'WORK5',  text:'Tenant Information / Documents Maintenance in Societyrun App' },
+    { id:'WORK6',  text:'Installation of Pigeon Net in the passages of all floors' },
+    { id:'WORK7',  text:'Additional Security Cameras' },
+    { id:'WORK8',  text:'Additional Parking Mirror at the entrance near watchman area' },
+    { id:'WORK9',  text:'Parking Lots Marking for both four-wheelers and two-wheelers' },
+    { id:'WORK10', text:'Policy for EV Chargers' },
+    { id:'WORK11', text:'Parking Policy (especially tenant)' },
+    { id:'WORK12', text:'Duct Areas Repairs & Painting' }
+  ]
+};
+
+const AUDIT_CONTACTS = [
+  // Lift
+  { id:'CON1',  service:'Lift', name:'Rakshit Prabhu',    role:'Owner',                   phone:'9730496789', notes:'Need to discuss contract terms — recently replaced major electrical components of auto-door lift.' },
+  { id:'CON2',  service:'Lift', name:'Ravi',               role:'Senior Technician',        phone:'9325633827', notes:'' },
+  { id:'CON3',  service:'Lift', name:'Sagar Alhat',        role:'Technician',               phone:'7020207413', notes:'Monthly preventive maintenance + on-call (unlimited).' },
+  { id:'CON4',  service:'Lift', name:'Office',             role:'Reception',                phone:'9370250537', notes:'Support available for any issues.' },
+  // Generator
+  { id:'CON5',  service:'Generator', name:'Mohol',         role:'Partner',                  phone:'9850261135', notes:'Preventive maintenance contract — monthly. Oil & filter changed yearly.' },
+  { id:'CON6',  service:'Generator', name:'Khandagle',     role:'Technician',               phone:'9359381600', notes:'' },
+  // Frontier Security
+  { id:'CON7',  service:'Frontier Security', name:'Sameer Londhe',  role:'Owner',           phone:'8600796363', notes:'' },
+  { id:'CON8',  service:'Frontier Security', name:'Mishra',         role:'Bavdhan area supervisor', phone:'9146666281', notes:'' },
+  { id:'CON9',  service:'Frontier Security', name:'Raja Tripathi',  role:'Day-time guard',  phone:'9356228357', notes:'' },
+  { id:'CON10', service:'Frontier Security', name:'Bhupat',         role:'Night-time guard', phone:'7821920395', notes:'' },
+  // Housekeeping
+  { id:'CON11', service:'Housekeeping - SK Enterprises', name:'Marane',      role:'Owner',       phone:'9922528333', notes:'' },
+  { id:'CON12', service:'Housekeeping - SK Enterprises', name:'Sanjay Wagh', role:'Daily staff', phone:'7020983447', notes:'' },
+  // Plumbing & Masonry
+  { id:'CON13', service:'Plumbing & Masonry', name:'More',  role:'Owner', phone:'8999316831', notes:'For any plumbing, masonry or cementing work.' },
+  // Electrical
+  { id:'CON14', service:'Electrical Work', name:'Mohan',    role:'Owner', phone:'9922644726', notes:'Provides bulbs and lights at a discounted price.' },
+  // CCTV
+  { id:'CON15', service:'CCTV', name:'Nitin Jambhulkar',   role:'Owner', phone:'9822508909', notes:'CCTV installation and maintenance.' },
+  // Water Pumps
+  { id:'CON16', service:'Water Pumps', name:'Mr. Ganesh Bodake', role:'Owner', phone:'9822727211', notes:'Water pump maintenance and repairs.' },
+  // Water Tanker Vendors
+  { id:'CON17', service:'Water Tanker Vendors', name:'Mr. Jadhav', role:'Owner', phone:'9561808051', notes:'' },
+  { id:'CON18', service:'Water Tanker Vendors', name:'Mr. Dagade', role:'Owner', phone:'9890063647', notes:'' },
+  // PMC Water Department
+  { id:'CON19', service:'PMC Water Department', name:'Bibhishan',       role:'Water line man',          phone:'8208427881', notes:'' },
+  { id:'CON20', service:'PMC Water Department', name:'Shrikant Talekar', role:'Bavdhan area supervisor', phone:'9011353391', notes:'' },
+  // PMC Tree Cutting
+  { id:'CON21', service:'PMC Tree Cutting', name:'Mr. Hegde',  role:'Bavdhan area', phone:'8888585059', notes:'' },
+  { id:'CON22', service:'PMC Tree Cutting', name:'Mr. Sayyad', role:'Bavdhan area', phone:'8459534001', notes:'' },
+  // Karthik Hygienes
+  { id:'CON23', service:'Karthik Hygienes', name:'Karthik', role:'Owner', phone:'9637147114', notes:'Water tank cleaning.' },
+  // SocietyRun
+  { id:'CON24', service:'SocietyRun', name:'Ashish Waikar',  role:'Owner',             phone:'8055551809', notes:'' },
+  { id:'CON25', service:'SocietyRun', name:'Tushar',         role:'Technical person',  phone:'7066161979', notes:'Need to discuss about not charging software charges.' },
+  { id:'CON26', service:'SocietyRun', name:'Prakash Jadhav', role:'Accounting support', phone:'7039746016', notes:'' },
+  // Fabrication
+  { id:'CON27', service:'Fabrication Work', name:'Yadav', role:'Owner', phone:'9822752631', notes:'' }
+];
+
+const AUDIT_ASSETS = [
+  { name:'CCTV',                  value:80125.88,  asOnDate:'2026-03-31', notes:'WDV — Audit FY25-26' },
+  { name:'Furniture (CCTV Box)',  value:1165.50,   asOnDate:'2026-03-31', notes:'WDV — Audit FY25-26' },
+  { name:'Intercom',              value:1272.60,   asOnDate:'2026-03-31', notes:'WDV — Audit FY25-26' },
+  { name:'Road',                  value:367889.40, asOnDate:'2026-03-31', notes:'WDV — Audit FY25-26' },
+  { name:'Water Motor',           value:16557.60,  asOnDate:'2026-03-31', notes:'WDV — Audit FY25-26' },
+  { name:'Dustbin Shed',          value:41944.95,  asOnDate:'2026-03-31', notes:'WDV — Audit FY25-26' },
+  { name:'Security Shed',         value:12282.50,  asOnDate:'2026-03-31', notes:'WDV — Audit FY25-26' },
+  { name:'Letter Box',            value:32614.50,  asOnDate:'2026-03-31', notes:'WDV — Audit FY25-26' },
+  { name:'UPS for CCTV',          value:1551.22,   asOnDate:'2026-03-31', notes:'WDV — Audit FY25-26' },
+  { name:'Ladder',                value:4486.50,   asOnDate:'2026-03-31', notes:'WDV — Audit FY25-26' },
+  { name:'MSEB Security Deposit', value:7590,      asOnDate:'2026-03-31', notes:'Deposit — Audit FY25-26' },
+  { name:'TDS 194A Receivable',   value:61646,     asOnDate:'2026-03-31', notes:'TDS Receivable — Audit FY25-26' }
+];
+
+const AUDIT_FDS = [
+  // ── Open FDs ──
+  { bank:'Union Bank of India', fdNumber:'6092030300004689', amount:1000000, dateOpened:'2022-05-13', maturityDate:'2027-08-13', roi:5.5,  maturityValue:1327893, status:'Open',   notes:'63M FD' },
+  { bank:'Union Bank of India', fdNumber:'6092030300004690', amount:1000000, dateOpened:'2022-05-13', maturityDate:'2027-08-13', roi:5.5,  maturityValue:1327893, status:'Open',   notes:'63M FD' },
+  { bank:'Union Bank of India', fdNumber:'6092030300004691', amount:1000000, dateOpened:'2022-05-13', maturityDate:'2027-08-13', roi:5.5,  maturityValue:1327893, status:'Open',   notes:'63M FD' },
+  { bank:'Union Bank of India', fdNumber:'6092030300007451', amount:1000000, dateOpened:'2025-05-19', maturityDate:'2026-08-18', roi:7.15, maturityValue:1092300, status:'Open',   notes:'456 days' },
+  { bank:'Union Bank of India', fdNumber:'6092030300007453', amount:2500000, dateOpened:'2025-05-20', maturityDate:'2026-08-19', roi:7.15, maturityValue:2643454, status:'Open',   notes:'456 days' },
+  { bank:'ICICI Bank',          fdNumber:'187613020223',     amount:2000000, dateOpened:'2025-05-19', maturityDate:'2026-06-19', roi:6.76, maturityValue:2112680, status:'Open',   notes:'Closing value as on 31-Mar-2026' },
+  // ── Closed FDs ──
+  { bank:'Union Bank of India', fdNumber:'6092030360000450', amount:1300000, dateOpened:'2024-12-23', maturityDate:'2026-01-23', roi:6.76, maturityValue:1395199, status:'Closed', notes:'13M; TDS ₹733; closed 23-Jan-2026' },
+  { bank:'Union Bank of India', fdNumber:'6092030360000460', amount:100000,  dateOpened:'2025-01-18', maturityDate:'2026-02-18', roi:6.76, maturityValue:107323,  status:'Closed', notes:'13M; TDS ₹56; closed 18-Feb-2026' },
+  { bank:'Union Bank of India', fdNumber:'6092030360000461', amount:1000000, dateOpened:'2025-01-18', maturityDate:'2026-02-18', roi:6.76, maturityValue:1073230, status:'Closed', notes:'13M; TDS ₹563; closed 18-Feb-2026; verify FD no.' },
+  { bank:'Union Bank of India', fdNumber:'6092030360000463', amount:200000,  dateOpened:'2025-01-18', maturityDate:'2026-02-18', roi:6.76, maturityValue:214646,  status:'Closed', notes:'13M; TDS ₹113; closed 18-Feb-2026' },
+  { bank:'Union Bank of India', fdNumber:'6092030360000464', amount:300000,  dateOpened:'2025-01-18', maturityDate:'2026-02-18', roi:6.76, maturityValue:321969,  status:'Closed', notes:'13M; TDS ₹169; closed 18-Feb-2026' }
+];
+
+// openingDue = outstanding as on 31-03-2026 (negative = advance/credit), 0 = fully paid
+const AUDIT_MEMBERS = [
+  { unitNo:'Block 101', ownerName:'HRISHIKESH GODSE & Vasanti Godse',           phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:0      },
+  { unitNo:'Block 102', ownerName:'Gayatri Kulkarni',                            phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:0      },
+  { unitNo:'Block 103', ownerName:'Anup Mukund Mitragotri',                      phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:0      },
+  { unitNo:'Block 104', ownerName:'Onkar Mitragotri',                            phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:0      },
+  { unitNo:'Block 105', ownerName:'GURURAJ KANCHAGAR',                           phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:216    },
+  { unitNo:'Block 106', ownerName:'Pushkar Sadanand Phatak',                     phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:0      },
+  { unitNo:'Block 201', ownerName:'Saurabh Joshi & Chandrashekhar Joshi',        phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:0      },
+  { unitNo:'Block 202', ownerName:'YOGESH SABLE & Rama Y Sable',                 phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:0      },
+  { unitNo:'Block 203', ownerName:'NITIN PASARKAR',                              phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:215    },
+  { unitNo:'Block 204', ownerName:'RAVIKUMAR MISHRA',                            phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:0      },
+  { unitNo:'Block 205', ownerName:'Bipinchandra Gadgil & Swati Gadgil',          phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:0      },
+  { unitNo:'Block 206', ownerName:'PARAG BHATAVDEKAR & Dhanashree',              phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:0      },
+  { unitNo:'Block 301', ownerName:'Sarang Wadwekar',                             phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:0      },
+  { unitNo:'Block 302', ownerName:'Dr. Mukund Bodhankar & Swapnil Bodhankar',    phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:0      },
+  { unitNo:'Block 303', ownerName:'VAIBHAV KULKARNI',                            phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:0      },
+  { unitNo:'Block 304', ownerName:'MUKUND SOMAN',                                phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:0      },
+  { unitNo:'Block 305', ownerName:'MANDAR NAGARKAR',                             phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:25734  },
+  { unitNo:'Block 306', ownerName:'R P APARAJIT',                                phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:0      },
+  { unitNo:'Block 401', ownerName:'Bansi Doifode',                               phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:0      },
+  { unitNo:'Block 402', ownerName:'VINOD KADAM & Smita Kadam',                   phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:40140  },
+  { unitNo:'Block 403', ownerName:'KAUSTUBH KULKARNI & Vasundhara Kulkarni',     phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:0      },
+  { unitNo:'Block 404', ownerName:'GAUTAM KUMAR JHA',                            phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:0      },
+  { unitNo:'Block 405', ownerName:'KALYANI KULKARNI & Adwait Kulkarni',          phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:0      },
+  { unitNo:'Block 406', ownerName:'VIJAYALAXMI TADEPALLI',                       phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:0      },
+  { unitNo:'Block 501', ownerName:'CHANDRASHEKAR KULKARNI',                      phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:36661  },
+  { unitNo:'Block 502', ownerName:'SACHIN PALDHIKAR',                            phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:27240  },
+  { unitNo:'Block 503', ownerName:'MAHESH KULKARNI',                             phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:0      },
+  { unitNo:'Block 504', ownerName:'ABHIJEET DANDADE',                            phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:0      },
+  { unitNo:'Block 505', ownerName:'CHINTAMAN JAGTAP',                            phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:0      },
+  { unitNo:'Block 506', ownerName:'Jigar Ajmera',                                phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:-8180  },
+  { unitNo:'Block 601', ownerName:'AMIT KULKARNI & Tejaswini Kulkarni',          phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:0      },
+  { unitNo:'Block 602', ownerName:'Neeraj Gadgil',                               phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:0      },
+  { unitNo:'Block 603', ownerName:'Anuj Ladda & Ashok Ladda',                    phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:0      },
+  { unitNo:'Block 604', ownerName:'HEMANT DOLE',                                 phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:227    },
+  { unitNo:'Block 605', ownerName:'Anirudha Modak & Nirupama A Modak',           phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:0      },
+  { unitNo:'Block 606', ownerName:'Mandar Kulkarni',                             phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:37394  },
+  { unitNo:'Block 701', ownerName:'A G LELE',                                    phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:40454  },
+  { unitNo:'Block 702', ownerName:'DILIP VEDEPATIL',                             phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:0      },
+  { unitNo:'Block 703', ownerName:'ASHUTOSH MANKAR',                             phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:36692  },
+  { unitNo:'Block 704', ownerName:'HEMANT DABKE',                                phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:0      },
+  { unitNo:'Block 705', ownerName:'Ameya Pathade',                               phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:0      },
+  { unitNo:'Block 706', ownerName:'RAJENDRA S GABALE',                           phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:27863  },
+  { unitNo:'Block 801', ownerName:'Kunal Gharal',                                phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:0      },
+  { unitNo:'Block 802', ownerName:'Sulabha Ashok Joshi & Ashish Joshi',          phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:18741  },
+  { unitNo:'Block 803', ownerName:'VINAYKUMAR PATHAK',                           phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:58068  },
+  { unitNo:'Block 804', ownerName:'SHRIKRISHNA SAHASRABUDHHE & Dayani Saiagra',  phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:0      },
+  { unitNo:'Block 805', ownerName:'Umesh Athawale',                              phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:0      },
+  { unitNo:'Block 901', ownerName:'Sangram Pradhan',                             phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:0      },
+  { unitNo:'Block 902', ownerName:'Milind Sathe',                                phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:0      },
+  { unitNo:'Block 903', ownerName:'ABHAY CHITRE',                                phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:-48325 },
+  { unitNo:'Block 904', ownerName:'Pradeep Eknath Pisute',                       phone:'', email:'', monthlyMaintenance:2500, flatType:'', openingDue:0      }
+];
+
+async function loadAuditData() {
+  if (!confirm('Load FY 2025-26 audit data?\n\n• 3 bank balances\n• 11 FDs (6 open + 5 closed Union Bank)\n• 15 members with prior outstanding dues\n• 5 society funds (Reserves & Capital)\n• 12 fixed assets\n• 9 committee members + 5 responsibilities\n• 27 reference contacts (vendors & services)\n\nExisting records will be updated with corrected values. Continue?')) return;
+  let addedB=0, addedF=0, addedM=0, addedFu=0, addedA=0;
+  AUDIT_BANKS.forEach(b => {
+    const ex=DB.banks.find(x=>x.bankName===b.bankName);
+    if (ex) { ex.balance=b.balance; ex.asOnDate=b.asOnDate; }
+    else { DB.banks.push({...b}); addedB++; }
+  });
+  AUDIT_FDS.forEach(f => {
+    const ex = DB.fds.find(x=>x.fdNumber===f.fdNumber);
+    if (ex) {
+      ex.maturityDate=f.maturityDate; ex.roi=f.roi; ex.maturityValue=f.maturityValue;
+      ex.status=f.status; ex.notes=f.notes;
+    } else { DB.fds.push({...f,id:uid('FD')}); addedF++; }
+  });
+  AUDIT_MEMBERS.forEach(m => {
+    const ex=DB.members.find(x=>x.unitNo===m.unitNo);
+    if (ex) { ex.openingDue=m.openingDue; }
+    else { DB.members.push({...m}); addedM++; }
+  });
+  if (!DB.funds)  DB.funds  = [];
+  if (!DB.assets) DB.assets = [];
+  AUDIT_FUNDS.forEach(f => {
+    const ex=DB.funds.find(x=>x.name===f.name);
+    if (ex) { ex.amount=f.amount; ex.asOnDate=f.asOnDate; ex.category=f.category; }
+    else { DB.funds.push({...f,id:uid('FND')}); addedFu++; }
+  });
+  AUDIT_ASSETS.forEach(a => {
+    const ex=DB.assets.find(x=>x.name===a.name);
+    if (ex) { ex.value=a.value; ex.asOnDate=a.asOnDate; }
+    else { DB.assets.push({...a,id:uid('AST')}); addedA++; }
+  });
+  if (!DB.committee) DB.committee = { members:[], responsibilities:[], workItems:[] };
+  DB.committee.members = [...AUDIT_COMMITTEE.members];
+  DB.committee.responsibilities = AUDIT_COMMITTEE.responsibilities.map(r=>({...r}));
+  DB.committee.workItems = AUDIT_COMMITTEE.workItems.map(w=>({...w}));
+  if (!DB.contacts) DB.contacts = [];
+  let addedCon = 0;
+  AUDIT_CONTACTS.forEach(c => {
+    const ex = DB.contacts.find(x => x.service === c.service && x.name === c.name);
+    if (ex) { ex.role = c.role; ex.phone = c.phone; ex.notes = c.notes; }
+    else { DB.contacts.push({...c}); addedCon++; }
+  });
+  await persist(`Loaded: ${addedB} banks, ${addedF} FDs, ${addedM} members, ${addedFu} funds, ${addedA} assets, committee ✅, ${addedCon} contacts ✅`);
+  closeModal('mSettings');
+  renderCurrentTab();
+}
+
+init();
+</script>
+</body>
+</html>
