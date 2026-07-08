@@ -80,11 +80,15 @@
     </div>
   </div>
   <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
-    <select id="roleSelect" onchange="setRole(this.value)" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:4px 6px;font-size:.72rem;max-width:140px">
-      <option style="color:#000;background:#fff" value="Treasurer">Ameya Pathade (Treasurer)</option>
-      <option style="color:#000;background:#fff" value="Secretary">Satyajit Kulkarni (Secretary)</option>
-      <option style="color:#000;background:#fff" value="Chairman">Dr. Mukund Bodhankar (Chairman)</option>
-    </select>
+    <div style="display:flex;flex-direction:column;gap:3px;align-items:flex-end">
+      <select id="roleSelect" onchange="setRole(this.value)" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:4px 6px;font-size:.72rem;max-width:150px;width:150px">
+        <option style="color:#000;background:#fff" value="Treasurer">Ameya Pathade (Treasurer)</option>
+        <option style="color:#000;background:#fff" value="Secretary">Satyajit Kulkarni (Secretary)</option>
+        <option style="color:#000;background:#fff" value="Chairman">Dr. Mukund Bodhankar (Chairman)</option>
+        <option style="color:#000;background:#fff" value="Other">Other…</option>
+      </select>
+      <input id="otherRoleInput" type="text" placeholder="Enter your name…" oninput="setOtherRole(this.value)" style="display:none;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:6px;padding:4px 6px;font-size:.72rem;width:150px;box-sizing:border-box" autocomplete="off">
+    </div>
     <span id="viewerBadge" style="display:none;align-items:center;gap:4px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);border-radius:6px;padding:4px 8px;font-size:.72rem;font-weight:600;white-space:nowrap">👁 View Only</span>
     <button onclick="showSettings()" class="btn btn-secondary" style="padding:5px 10px;font-size:.75rem;white-space:nowrap;flex-shrink:0">⚙ Setup</button>
   </div>
@@ -640,9 +644,19 @@
       <div><label class="lbl">Date*</label><input type="date" id="ntDate"></div>
       <div><label class="lbl">Title</label><input id="ntTitle" placeholder="Short heading (optional)"></div>
     </div>
-    <div style="margin-bottom:14px">
+    <div style="margin-bottom:10px">
       <label class="lbl">Note*</label>
       <textarea id="ntText" rows="5" placeholder="Write your note here…"></textarea>
+    </div>
+    <div style="margin-bottom:14px">
+      <label class="lbl">Recorded By</label>
+      <select id="ntRecordedBy" onchange="handleNtRoleChange(this.value)" style="width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:.9rem">
+        <option value="Treasurer">Ameya Pathade (Treasurer)</option>
+        <option value="Secretary">Satyajit Kulkarni (Secretary)</option>
+        <option value="Chairman">Dr. Mukund Bodhankar (Chairman)</option>
+        <option value="Other">Other…</option>
+      </select>
+      <input id="ntOtherName" type="text" placeholder="Enter name…" style="display:none;margin-top:6px;width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:.9rem;box-sizing:border-box" autocomplete="off">
     </div>
     <div style="display:flex;gap:8px">
       <button class="btn btn-primary" onclick="saveNote()">Save Note</button>
@@ -821,7 +835,22 @@ function init() {
   else { loadFromBin(false); }
 }
 
-function setRole(v) { currentRole=v; localStorage.setItem('mac_role',v); }
+function setRole(v) {
+  const inp = document.getElementById('otherRoleInput');
+  if (v === 'Other') {
+    inp.style.display = 'block';
+    inp.value = '';
+    inp.focus();
+  } else {
+    inp.style.display = 'none';
+    currentRole = v;
+    localStorage.setItem('mac_role', v);
+  }
+}
+function setOtherRole(v) {
+  const name = v.trim();
+  if (name) { currentRole = name; localStorage.setItem('mac_role', name); }
+}
 
 // ─────────────────────────────────────────────────────────────────
 // JSONBIN API
@@ -1727,6 +1756,7 @@ function showNoteModal() {
   document.getElementById('ntTitle').value  = '';
   document.getElementById('ntText').value   = '';
   document.getElementById('mNoteTitle').textContent = '📝 Add Note';
+  prefillNtRole(currentRole);
   document.getElementById('mNote').style.display = 'flex';
 }
 
@@ -1738,7 +1768,28 @@ function openEditNoteModal(id) {
   document.getElementById('ntTitle').value  = n.title||'';
   document.getElementById('ntText').value   = n.text;
   document.getElementById('mNoteTitle').textContent = '✏️ Edit Note';
+  prefillNtRole(n.recordedBy || currentRole);
   document.getElementById('mNote').style.display = 'flex';
+}
+
+function prefillNtRole(role) {
+  const sel = document.getElementById('ntRecordedBy');
+  const inp = document.getElementById('ntOtherName');
+  const known = ['Treasurer','Secretary','Chairman'];
+  if (known.includes(role)) {
+    sel.value = role;
+    inp.style.display = 'none';
+    inp.value = '';
+  } else {
+    sel.value = 'Other';
+    inp.style.display = 'block';
+    inp.value = role || '';
+  }
+}
+function handleNtRoleChange(v) {
+  const inp = document.getElementById('ntOtherName');
+  if (v === 'Other') { inp.style.display = 'block'; inp.value = ''; inp.focus(); }
+  else               { inp.style.display = 'none';  inp.value = ''; }
 }
 
 async function saveNote() {
@@ -1753,7 +1804,10 @@ async function saveNote() {
     await persist('Note updated ✅');
   } else {
     const timeNow = new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true});
-    DB.notes.push({ id:uid('NOTE'), date, time:timeNow, title:document.getElementById('ntTitle').value.trim(), text, recordedBy:currentRole });
+    const rbSel = document.getElementById('ntRecordedBy').value;
+    const rbOther = document.getElementById('ntOtherName').value.trim();
+    const noteBy = rbSel === 'Other' ? (rbOther || 'Other') : rbSel;
+    DB.notes.push({ id:uid('NOTE'), date, time:timeNow, title:document.getElementById('ntTitle').value.trim(), text, recordedBy:noteBy });
     await persist('Note saved ✅');
   }
   closeModal('mNote');
