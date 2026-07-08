@@ -80,15 +80,12 @@
     </div>
   </div>
   <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
-    <div style="display:flex;flex-direction:column;gap:3px;align-items:flex-end">
-      <select id="roleSelect" onchange="setRole(this.value)" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:4px 6px;font-size:.72rem;max-width:150px;width:150px">
-        <option style="color:#000;background:#fff" value="Treasurer">Ameya Pathade (Treasurer)</option>
-        <option style="color:#000;background:#fff" value="Secretary">Satyajit Kulkarni (Secretary)</option>
-        <option style="color:#000;background:#fff" value="Chairman">Dr. Mukund Bodhankar (Chairman)</option>
-        <option style="color:#000;background:#fff" value="Other">Other…</option>
-      </select>
-      <input id="otherRoleInput" type="text" placeholder="Enter your name…" oninput="setOtherRole(this.value)" style="display:none;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:6px;padding:4px 6px;font-size:.72rem;width:150px;box-sizing:border-box" autocomplete="off">
-    </div>
+    <select id="roleSelect" onchange="setRole(this.value)" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:4px 6px;font-size:.72rem;max-width:140px">
+      <option style="color:#000;background:#fff" value="Treasurer">Ameya Pathade (Treasurer)</option>
+      <option style="color:#000;background:#fff" value="Secretary">Satyajit Kulkarni (Secretary)</option>
+      <option style="color:#000;background:#fff" value="Chairman">Dr. Mukund Bodhankar (Chairman)</option>
+      <option style="color:#000;background:#fff" value="Other">Other…</option>
+    </select>
     <span id="viewerBadge" style="display:none;align-items:center;gap:4px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);border-radius:6px;padding:4px 8px;font-size:.72rem;font-weight:600;white-space:nowrap">👁 View Only</span>
     <button onclick="showSettings()" class="btn btn-secondary" style="padding:5px 10px;font-size:.75rem;white-space:nowrap;flex-shrink:0">⚙ Setup</button>
   </div>
@@ -835,22 +832,7 @@ function init() {
   else { loadFromBin(false); }
 }
 
-function setRole(v) {
-  const inp = document.getElementById('otherRoleInput');
-  if (v === 'Other') {
-    inp.style.display = 'block';
-    inp.value = '';
-    inp.focus();
-  } else {
-    inp.style.display = 'none';
-    currentRole = v;
-    localStorage.setItem('mac_role', v);
-  }
-}
-function setOtherRole(v) {
-  const name = v.trim();
-  if (name) { currentRole = name; localStorage.setItem('mac_role', name); }
-}
+function setRole(v) { currentRole=v; localStorage.setItem('mac_role',v); }
 
 // ─────────────────────────────────────────────────────────────────
 // JSONBIN API
