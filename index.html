@@ -89,7 +89,7 @@
   </div>
   <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
     <span id="viewerBadge" style="display:none;align-items:center;gap:4px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);border-radius:6px;padding:4px 8px;font-size:.72rem;font-weight:600;white-space:nowrap">👁 View Only</span>
-    <button onclick="showSettings()" class="btn btn-secondary" style="padding:5px 10px;font-size:.75rem;white-space:nowrap;flex-shrink:0">⚙ Setup</button>
+    <button onclick="showSettings()" class="btn btn-secondary rw" style="padding:5px 10px;font-size:.75rem;white-space:nowrap;flex-shrink:0">⚙ Setup</button>
   </div>
 </header>
 
@@ -1059,6 +1059,7 @@ window.addEventListener('beforeunload', e => {
 // SETTINGS / SETUP
 // ─────────────────────────────────────────────────────────────────
 function showSettings() {
+  if (readOnlyMode) { toast('Setup not available in View-Only mode', 'blue'); return; }
   document.getElementById('apiKeyInput').value = API_KEY;
   document.getElementById('binIdInput').value  = BIN_ID;
   document.getElementById('binIdRow').style.display = BIN_ID ? 'block' : 'none';
