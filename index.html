@@ -384,10 +384,22 @@
     <div id="viewerConnectBlock" style="background:#f5f3ff;border:1px solid #c4b5fd;border-radius:8px;padding:12px;font-size:.82rem">
       <b>👁 Committee Member Access (View Only)</b><br>
       <span style="color:#374151">For committee members — they can view all data but cannot add, edit, or delete anything.</span><br>
-      <div style="margin-top:8px;color:#6d28d9;font-size:.8rem"><b>Instructions for committee members:</b><br>
-      1. Open the HTML file in Chrome<br>
-      2. Click ⚙ Setup → enter the API Key and Bin ID → click <b>Connect as Viewer</b></div>
-      <button class="btn" onclick="connectViewer()" style="margin-top:10px;padding:6px 14px;font-size:.82rem;background:#7c3aed;color:#fff;border:none;border-radius:7px;cursor:pointer;font-weight:600">👁 Connect as Viewer</button>
+
+      <div style="background:#ede9fe;border:1px solid #ddd6fe;border-radius:6px;padding:10px;margin:10px 0;font-size:.8rem">
+        <b style="display:block;margin-bottom:6px">📋 Option 1: Share Direct Link (Easiest)</b>
+        <input id="viewerLink" type="text" placeholder="Click button below to generate link" style="width:100%;font-family:monospace;font-size:.75rem;margin-bottom:6px;padding:6px;border:1px solid #d1d5db;border-radius:4px" readonly>
+        <button class="btn" onclick="generateViewerLink()" style="padding:5px 12px;font-size:.75rem;background:#7c3aed;color:#fff;border:none;border-radius:5px;cursor:pointer;font-weight:600;width:100%">🔗 Generate Shareable Viewer Link</button>
+        <button class="btn btn-secondary" id="copyLinkBtn" onclick="copyViewerLink()" style="padding:5px 12px;font-size:.75rem;margin-top:6px;width:100%;display:none">📋 Copy Link</button>
+        <small style="display:block;margin-top:6px;color:#6d28d9">Share this link with committee members. They just click it and see your data instantly!</small>
+      </div>
+
+      <div style="background:#faf5ff;border-top:1px solid #e9d5ff;padding-top:10px;font-size:.8rem">
+        <b style="display:block;margin-bottom:6px">📝 Option 2: Manual Entry</b>
+        <div style="color:#6d28d9;margin-bottom:8px"><b>Instructions for committee members:</b><br>
+        1. Open the HTML file in Chrome<br>
+        2. Click ⚙ Setup → enter the API Key and Bin ID → click <b>Connect as Viewer</b></div>
+        <button class="btn" onclick="connectViewer()" style="padding:6px 14px;font-size:.82rem;background:#7c3aed;color:#fff;border:none;border-radius:7px;cursor:pointer;font-weight:600">👁 Connect as Viewer</button>
+      </div>
     </div>
 
     <div id="viewerStatusBlock" style="display:none;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:8px;padding:12px;font-size:.82rem">
@@ -848,6 +860,22 @@ const INC_SUBS = {
 // INIT
 // ─────────────────────────────────────────────────────────────────
 function init() {
+  // Check for viewer link (URL parameters: ?viewer=1&key=...&bin=...)
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('viewer') && params.has('key') && params.has('bin')) {
+    const sharedKey = decodeURIComponent(params.get('key'));
+    const sharedBin = decodeURIComponent(params.get('bin'));
+    if (sharedKey && sharedBin) {
+      API_KEY = sharedKey;
+      BIN_ID = sharedBin;
+      localStorage.setItem('mac_apikey', API_KEY);
+      localStorage.setItem('mac_binid', BIN_ID);
+      localStorage.setItem('mac_readonly', 'true');
+      readOnlyMode = true;
+      document.body.classList.add('readonly');
+    }
+  }
+
   document.getElementById('roleSelect').value = currentRole;
   const fy = now.getMonth() >= 3
     ? `${now.getFullYear()}-${String(now.getFullYear()+1).slice(-2)}`
@@ -2345,6 +2373,28 @@ function disconnectViewer() {
   document.body.classList.remove('readonly');
   closeModal('mSettings');
   toast('Viewer mode disabled — full access restored');
+}
+
+function generateViewerLink() {
+  if (!API_KEY || !BIN_ID) {
+    toast('Connect to your data bin first', 'red');
+    return;
+  }
+  const baseUrl = window.location.href.split('?')[0].split('#')[0];
+  const viewerLink = `${baseUrl}?viewer=1&key=${encodeURIComponent(API_KEY)}&bin=${encodeURIComponent(BIN_ID)}`;
+  document.getElementById('viewerLink').value = viewerLink;
+  document.getElementById('copyLinkBtn').style.display = 'block';
+  toast('✓ Viewer link generated! Click "Copy Link" to share.', 'green');
+}
+
+function copyViewerLink() {
+  const link = document.getElementById('viewerLink').value;
+  if (!link) return;
+  navigator.clipboard.writeText(link).then(() => {
+    toast('📋 Link copied to clipboard!', 'green');
+  }).catch(() => {
+    toast('Copy failed — select and copy manually', 'orange');
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────
