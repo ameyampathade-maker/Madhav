@@ -1181,39 +1181,29 @@ function renderDashboard() {
       ${!API_KEY||!BIN_ID ? '<div style="background:linear-gradient(135deg,#fef9c3,#fef3c7);border:1.5px solid #fde68a;border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:.9rem;display:flex;align-items:center;gap:10px">⚠️ <span><b>Not Connected to Cloud</b> — Click <button onclick="showSettings()" style="background:none;border:none;color:#1d4ed8;cursor:pointer;font-weight:600;text-decoration:underline;padding:0;font-size:.9rem">⚙ Setup</button> to enable data sync</span></div>' : ''}
 
       <!-- STATS GRID -->
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:28px">
-        <!-- Collected -->
-        <div class="stat green" style="padding:20px;border-radius:14px;box-shadow:0 4px 12px rgba(21,128,61,0.15);border:1px solid rgba(34,197,94,0.2);transition:all .3s ease;cursor:default" onmouseover="this.style.boxShadow='0 8px 20px rgba(21,128,61,0.2)'" onmouseout="this.style.boxShadow='0 4px 12px rgba(21,128,61,0.15)'">
-          <div style="font-size:.75rem;opacity:.85;font-weight:500;letter-spacing:.5px;text-transform:uppercase">💰 Collected</div>
-          <div style="font-size:2rem;font-weight:900;margin-top:8px;line-height:1">₹${fmt(collected)}</div>
-          <div style="font-size:.8rem;opacity:.8;margin-top:8px">${paidCount} of ${DB.members.length} flats paid</div>
-          <div style="width:100%;height:3px;background:rgba(255,255,255,.3);border-radius:2px;margin-top:10px">
-            <div style="width:${Math.round(paidCount/DB.members.length*100)}%;height:100%;background:rgba(255,255,255,.8);border-radius:2px;transition:width .3s ease"></div>
-          </div>
-        </div>
-
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:28px">
         <!-- Expenses -->
-        <div class="stat red" style="padding:20px;border-radius:14px;box-shadow:0 4px 12px rgba(220,38,38,0.15);border:1px solid rgba(239,68,68,0.2);transition:all .3s ease;cursor:default" onmouseover="this.style.boxShadow='0 8px 20px rgba(220,38,38,0.2)'" onmouseout="this.style.boxShadow='0 4px 12px rgba(220,38,38,0.15)'">
-          <div style="font-size:.75rem;opacity:.85;font-weight:500;letter-spacing:.5px;text-transform:uppercase">💸 Expenses</div>
-          <div style="font-size:2rem;font-weight:900;margin-top:8px;line-height:1">₹${fmt(expTotal)}</div>
-          <div style="font-size:.8rem;opacity:.8;margin-top:8px">${monthExp.length} transaction${monthExp.length!==1?'s':''}</div>
-          <div style="background:rgba(255,255,255,.15);border-radius:6px;padding:6px 8px;margin-top:10px;font-size:.75rem;text-align:center;font-weight:600">${monthExp.length>0?'Active':'No activity'}</div>
+        <div class="stat red" style="padding:18px;border-radius:12px;box-shadow:0 4px 12px rgba(220,38,38,0.15);border:1px solid rgba(239,68,68,0.2);transition:all .3s ease;cursor:default" onmouseover="this.style.boxShadow='0 8px 20px rgba(220,38,38,0.2)'" onmouseout="this.style.boxShadow='0 4px 12px rgba(220,38,38,0.15)'">
+          <div style="font-size:.7rem;opacity:.85;font-weight:500;letter-spacing:.4px;text-transform:uppercase">💸 Expenses</div>
+          <div style="font-size:1.75rem;font-weight:800;margin-top:8px;line-height:1">₹${fmt(expTotal)}</div>
+          <div style="font-size:.75rem;opacity:.8;margin-top:6px">${monthExp.length} transaction${monthExp.length!==1?'s':''}</div>
+          <div style="background:rgba(255,255,255,.15);border-radius:6px;padding:5px 8px;margin-top:8px;font-size:.7rem;text-align:center;font-weight:600">${monthExp.length>0?'Active':'No activity'}</div>
         </div>
 
         <!-- Bank Balance -->
-        <div class="stat blue" style="padding:20px;border-radius:14px;box-shadow:0 4px 12px rgba(30,64,175,0.15);border:1px solid rgba(59,130,246,0.2);transition:all .3s ease;cursor:default" onmouseover="this.style.boxShadow='0 8px 20px rgba(30,64,175,0.2)'" onmouseout="this.style.boxShadow='0 4px 12px rgba(30,64,175,0.15)'">
-          <div style="font-size:.75rem;opacity:.85;font-weight:500;letter-spacing:.5px;text-transform:uppercase">🏦 Bank Balance</div>
-          <div style="font-size:2rem;font-weight:900;margin-top:8px;line-height:1">₹${fmt(bankTotal)}</div>
-          <div style="font-size:.8rem;opacity:.8;margin-top:8px">${DB.banks.length} account${DB.banks.length!==1?'s':''}</div>
-          <div style="background:rgba(255,255,255,.15);border-radius:6px;padding:6px 8px;margin-top:10px;font-size:.75rem;text-align:center;font-weight:600">Liquid Assets</div>
+        <div class="stat blue" style="padding:18px;border-radius:12px;box-shadow:0 4px 12px rgba(30,64,175,0.15);border:1px solid rgba(59,130,246,0.2);transition:all .3s ease;cursor:default" onmouseover="this.style.boxShadow='0 8px 20px rgba(30,64,175,0.2)'" onmouseout="this.style.boxShadow='0 4px 12px rgba(30,64,175,0.15)'">
+          <div style="font-size:.7rem;opacity:.85;font-weight:500;letter-spacing:.4px;text-transform:uppercase">🏦 Bank Balance</div>
+          <div style="font-size:1.75rem;font-weight:800;margin-top:8px;line-height:1">₹${fmt(bankTotal)}</div>
+          <div style="font-size:.75rem;opacity:.8;margin-top:6px">${DB.banks.length} account${DB.banks.length!==1?'s':''}</div>
+          <div style="background:rgba(255,255,255,.15);border-radius:6px;padding:5px 8px;margin-top:8px;font-size:.7rem;text-align:center;font-weight:600">Liquid Assets</div>
         </div>
 
         <!-- FDs -->
-        <div class="stat teal" style="padding:20px;border-radius:14px;box-shadow:0 4px 12px rgba(15,118,110,0.15);border:1px solid rgba(20,184,166,0.2);transition:all .3s ease;cursor:default" onmouseover="this.style.boxShadow='0 8px 20px rgba(15,118,110,0.2)'" onmouseout="this.style.boxShadow='0 4px 12px rgba(15,118,110,0.15)'">
-          <div style="font-size:.75rem;opacity:.85;font-weight:500;letter-spacing:.5px;text-transform:uppercase">💎 Fixed Deposits</div>
-          <div style="font-size:2rem;font-weight:900;margin-top:8px;line-height:1">₹${fmt(fdTotal)}</div>
-          <div style="font-size:.8rem;opacity:.8;margin-top:8px">${openFDs.length} open FD${openFDs.length!==1?'s':''}</div>
-          <div style="background:rgba(255,255,255,.15);border-radius:6px;padding:6px 8px;margin-top:10px;font-size:.75rem;text-align:center;font-weight:600">Long-term Reserve</div>
+        <div class="stat teal" style="padding:18px;border-radius:12px;box-shadow:0 4px 12px rgba(15,118,110,0.15);border:1px solid rgba(20,184,166,0.2);transition:all .3s ease;cursor:default" onmouseover="this.style.boxShadow='0 8px 20px rgba(15,118,110,0.2)'" onmouseout="this.style.boxShadow='0 4px 12px rgba(15,118,110,0.15)'">
+          <div style="font-size:.7rem;opacity:.85;font-weight:500;letter-spacing:.4px;text-transform:uppercase">💎 Fixed Deposits</div>
+          <div style="font-size:1.75rem;font-weight:800;margin-top:8px;line-height:1">₹${fmt(fdTotal)}</div>
+          <div style="font-size:.75rem;opacity:.8;margin-top:6px">${openFDs.length} open FD${openFDs.length!==1?'s':''}</div>
+          <div style="background:rgba(255,255,255,.15);border-radius:6px;padding:5px 8px;margin-top:8px;font-size:.7rem;text-align:center;font-weight:600">Long-term Reserve</div>
         </div>
       </div>
 
