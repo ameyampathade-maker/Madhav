@@ -33,22 +33,31 @@
   .btn-secondary { background:#f1f5f9;color:#1e40af;border:1px solid #cbd5e1; }
   .spinner { border:3px solid #e2e8f0;border-top-color:var(--primary);border-radius:50%;width:34px;height:34px;animation:spin .7s linear infinite;display:inline-block; }
   @keyframes spin { to{transform:rotate(360deg)} }
-  .stat { border-radius:12px;padding:18px 20px;color:#fff; }
-  .stat.blue   { background:linear-gradient(135deg,#1e40af,#3b82f6); }
-  .stat.green  { background:linear-gradient(135deg,#15803d,#22c55e); }
-  .stat.orange { background:linear-gradient(135deg,#b45309,#f59e0b); }
-  .stat.red    { background:linear-gradient(135deg,#dc2626,#f87171); }
-  .stat.teal   { background:linear-gradient(135deg,#0f766e,#14b8a6); }
+  .stat { border-radius:14px;padding:20px;color:#fff;transition:all .3s ease;position:relative;overflow:hidden; }
+  .stat::before { content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:radial-gradient(circle at top right,rgba(255,255,255,0.1),transparent);pointer-events:none; }
+  .stat.blue   { background:linear-gradient(135deg,#1e40af 0%,#3b82f6 100%);box-shadow:0 4px 12px rgba(30,64,175,0.15); }
+  .stat.blue:hover { box-shadow:0 8px 24px rgba(30,64,175,0.25);transform:translateY(-2px); }
+  .stat.green  { background:linear-gradient(135deg,#15803d 0%,#22c55e 100%);box-shadow:0 4px 12px rgba(21,128,61,0.15); }
+  .stat.green:hover { box-shadow:0 8px 24px rgba(21,128,61,0.25);transform:translateY(-2px); }
+  .stat.orange { background:linear-gradient(135deg,#b45309 0%,#f59e0b 100%);box-shadow:0 4px 12px rgba(217,119,6,0.15); }
+  .stat.orange:hover { box-shadow:0 8px 24px rgba(217,119,6,0.25);transform:translateY(-2px); }
+  .stat.red    { background:linear-gradient(135deg,#dc2626 0%,#f87171 100%);box-shadow:0 4px 12px rgba(220,38,38,0.15); }
+  .stat.red:hover { box-shadow:0 8px 24px rgba(220,38,38,0.25);transform:translateY(-2px); }
+  .stat.teal   { background:linear-gradient(135deg,#0f766e 0%,#14b8a6 100%);box-shadow:0 4px 12px rgba(15,118,110,0.15); }
+  .stat.teal:hover { box-shadow:0 8px 24px rgba(15,118,110,0.25);transform:translateY(-2px); }
   .section { display:none; }
   .section.active { display:block; }
   #toast { position:fixed;bottom:22px;right:22px;padding:11px 18px;border-radius:9px;color:#fff;font-size:.86rem;z-index:9999;display:none;box-shadow:0 4px 16px rgba(0,0,0,.25); }
   label.lbl { display:block;font-size:.82rem;font-weight:600;color:#374151;margin-bottom:4px; }
   .grid2 { display:grid;grid-template-columns:1fr 1fr;gap:12px; }
+  @media(max-width:900px){
+    #dashContent > div:last-child { grid-template-columns:1fr !important; }
+  }
   @media(max-width:520px){
     .grid2{grid-template-columns:1fr}
     .sm-hide{display:none}
     .card{padding:14px 12px}
-    .stat{padding:14px 16px}
+    .stat{padding:14px 16px;font-size:.85rem}
     .modal-box{padding:20px 16px}
     th,td{padding:6px 8px;font-size:.78rem}
     .btn{padding:7px 14px;font-size:.82rem}
@@ -64,7 +73,6 @@
     .tab-btn     { padding:9px 10px !important; font-size:.78rem !important; }
   }
   body.readonly .rw { display:none!important }
-  body.readonly #roleSelect { display:none!important }
   body.readonly #viewerBadge { display:inline-flex!important }
 </style>
 </head>
@@ -80,12 +88,6 @@
     </div>
   </div>
   <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
-    <select id="roleSelect" onchange="setRole(this.value)" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:4px 6px;font-size:.72rem;max-width:140px">
-      <option style="color:#000;background:#fff" value="Treasurer">Ameya Pathade (Treasurer)</option>
-      <option style="color:#000;background:#fff" value="Secretary">Satyajit Kulkarni (Secretary)</option>
-      <option style="color:#000;background:#fff" value="Chairman">Dr. Mukund Bodhankar (Chairman)</option>
-      <option style="color:#000;background:#fff" value="Other">Other…</option>
-    </select>
     <span id="viewerBadge" style="display:none;align-items:center;gap:4px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);border-radius:6px;padding:4px 8px;font-size:.72rem;font-weight:600;white-space:nowrap">👁 View Only</span>
     <button onclick="showSettings()" class="btn btn-secondary" style="padding:5px 10px;font-size:.75rem;white-space:nowrap;flex-shrink:0">⚙ Setup</button>
   </div>
@@ -782,6 +784,13 @@
     </div>
     <label class="lbl">Tracking Notes / Comments</label>
     <textarea id="cwNotes" rows="3" placeholder="Status updates, action taken, next steps, blockers…" style="margin-bottom:10px;resize:vertical"></textarea>
+    <div style="margin-top:10px"><label class="lbl">Recorded By</label>
+      <select id="cwRecordedBy">
+        <option value="Treasurer">Ameya Pathade (Treasurer)</option>
+        <option value="Secretary">Satyajit Kulkarni (Secretary)</option>
+        <option value="Chairman">Dr. Mukund Bodhankar (Chairman)</option>
+      </select>
+    </div>
     <div style="display:flex;gap:8px;margin-top:6px">
       <button class="btn btn-danger rw" id="cwDeleteBtn" onclick="delCommWork(document.getElementById('cwId').value)" style="display:none;margin-right:auto;padding:5px 12px;font-size:.78rem">Delete</button>
       <button class="btn btn-primary" onclick="saveCommWork()">Save</button>
@@ -823,8 +832,15 @@
     <label class="lbl">Phone</label>
     <input id="conPhone" type="tel" style="width:100%;margin-bottom:10px;padding:7px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:.9rem" placeholder="10-digit mobile number">
     <label class="lbl">Notes / Comments</label>
-    <textarea id="conNotes" rows="2" style="width:100%;margin-bottom:16px;padding:7px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:.9rem;resize:vertical" placeholder="Any notes about this contact…"></textarea>
-    <div style="display:flex;gap:8px;justify-content:flex-end">
+    <textarea id="conNotes" rows="2" style="width:100%;margin-bottom:10px;padding:7px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:.9rem;resize:vertical" placeholder="Any notes about this contact…"></textarea>
+    <div style="margin-top:10px"><label class="lbl">Recorded By</label>
+      <select id="conRecordedBy">
+        <option value="Treasurer">Ameya Pathade (Treasurer)</option>
+        <option value="Secretary">Satyajit Kulkarni (Secretary)</option>
+        <option value="Chairman">Dr. Mukund Bodhankar (Chairman)</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
       <button class="btn btn-secondary" onclick="closeModal('mContact')">Cancel</button>
       <button class="btn btn-primary" onclick="saveContact()">Save Contact</button>
     </div>
@@ -891,7 +907,6 @@ function init() {
     }
   }
 
-  document.getElementById('roleSelect').value = currentRole;
   const fy = now.getMonth() >= 3
     ? `${now.getFullYear()}-${String(now.getFullYear()+1).slice(-2)}`
     : `${now.getFullYear()-1}-${String(now.getFullYear()).slice(-2)}`;
@@ -916,7 +931,6 @@ function init() {
   else { loadFromBin(false); }
 }
 
-function setRole(v) { currentRole=v; localStorage.setItem('mac_role',v); }
 
 // ─────────────────────────────────────────────────────────────────
 // JSONBIN API
@@ -1153,34 +1167,120 @@ function renderDashboard() {
   const fdAlert = openFDs.filter(f => { const d=(new Date(f.maturityDate)-now)/86400000; return d>=0&&d<=30; });
 
   document.getElementById('dashContent').innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-      <h2 style="font-weight:700;font-size:1.05rem">${MONTHS[m]} ${y} — Overview</h2>
-      ${!API_KEY||!BIN_ID ? '<div style="background:#fef9c3;border:1px solid #fde68a;padding:8px 12px;border-radius:7px;font-size:.82rem">⚠️ Not connected. Click <b>⚙ Setup</b> to get started.</div>' : ''}
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:18px">
-      <div class="stat green"><div style="opacity:.8;font-size:.78rem">Collected This Month</div><div style="font-size:1.45rem;font-weight:800;margin-top:3px">₹${fmt(collected)}</div><div style="font-size:.72rem;opacity:.85">${paidCount}/${DB.members.length} flats paid</div></div>
-      <div class="stat red"><div style="opacity:.8;font-size:.78rem">Expenses This Month</div><div style="font-size:1.45rem;font-weight:800;margin-top:3px">₹${fmt(expTotal)}</div></div>
-      <div class="stat blue"><div style="opacity:.8;font-size:.78rem">Bank Balance</div><div style="font-size:1.45rem;font-weight:800;margin-top:3px">₹${fmt(bankTotal)}</div></div>
-      <div class="stat teal"><div style="opacity:.8;font-size:.78rem">Total FDs (Open)</div><div style="font-size:1.45rem;font-weight:800;margin-top:3px">₹${fmt(fdTotal)}</div></div>
-    </div>
-    ${fdAlert.length ? `<div style="background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:.83rem">⚠️ <b>${fdAlert.length} FD(s) maturing within 30 days.</b> <button onclick="switchTab('fds')" style="background:none;border:none;color:#1d4ed8;cursor:pointer;font-size:.83rem;text-decoration:underline">View →</button></div>` : ''}
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-      <div class="card">
-        <div style="display:flex;justify-content:space-between;margin-bottom:10px">
-          <b>Pending Dues (${pending.length})</b>
-          <button onclick="switchTab('maintenance')" style="background:none;border:none;color:#2563eb;cursor:pointer;font-size:.8rem;text-decoration:underline">View All →</button>
+    <div style="padding:0 2px">
+      <!-- HEADER -->
+      <div style="margin-bottom:24px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span style="font-size:1.8rem">📊</span>
+          <h1 style="font-weight:800;font-size:1.8rem;color:#1e40af;margin:0">${MONTHS[m]} ${y}</h1>
         </div>
-        ${pending.slice(0,8).map(m2=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:.83rem"><span>${m2.unitNo} — ${m2.ownerName}</span><span class="badge-pending">Pending</span></div>`).join('')}
-        ${pending.length>8?`<div style="color:#94a3b8;font-size:.78rem;margin-top:6px;text-align:center">+${pending.length-8} more</div>`:''}
-        ${!pending.length?'<div style="color:#22c55e;font-size:.85rem;text-align:center;padding:12px">All flats paid this month ✓</div>':''}
+        <p style="color:#64748b;font-size:.95rem;margin:0">Financial Overview & Key Metrics</p>
       </div>
-      <div class="card">
-        <div style="display:flex;justify-content:space-between;margin-bottom:10px">
-          <b>Recent Expenses</b>
-          <button onclick="switchTab('expenses')" style="background:none;border:none;color:#2563eb;cursor:pointer;font-size:.8rem;text-decoration:underline">View All →</button>
+
+      <!-- CONNECTION STATUS -->
+      ${!API_KEY||!BIN_ID ? '<div style="background:linear-gradient(135deg,#fef9c3,#fef3c7);border:1.5px solid #fde68a;border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:.9rem;display:flex;align-items:center;gap:10px">⚠️ <span><b>Not Connected to Cloud</b> — Click <button onclick="showSettings()" style="background:none;border:none;color:#1d4ed8;cursor:pointer;font-weight:600;text-decoration:underline;padding:0;font-size:.9rem">⚙ Setup</button> to enable data sync</span></div>' : ''}
+
+      <!-- STATS GRID -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:28px">
+        <!-- Collected -->
+        <div class="stat green" style="padding:20px;border-radius:14px;box-shadow:0 4px 12px rgba(21,128,61,0.15);border:1px solid rgba(34,197,94,0.2);transition:all .3s ease;cursor:default" onmouseover="this.style.boxShadow='0 8px 20px rgba(21,128,61,0.2)'" onmouseout="this.style.boxShadow='0 4px 12px rgba(21,128,61,0.15)'">
+          <div style="font-size:.75rem;opacity:.85;font-weight:500;letter-spacing:.5px;text-transform:uppercase">💰 Collected</div>
+          <div style="font-size:2rem;font-weight:900;margin-top:8px;line-height:1">₹${fmt(collected)}</div>
+          <div style="font-size:.8rem;opacity:.8;margin-top:8px">${paidCount} of ${DB.members.length} flats paid</div>
+          <div style="width:100%;height:3px;background:rgba(255,255,255,.3);border-radius:2px;margin-top:10px">
+            <div style="width:${Math.round(paidCount/DB.members.length*100)}%;height:100%;background:rgba(255,255,255,.8);border-radius:2px;transition:width .3s ease"></div>
+          </div>
         </div>
-        ${monthExp.slice(-8).reverse().map(e=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:.83rem"><span>${e.category}${e.subCategory?' — '+e.subCategory:''}</span><span style="font-weight:600">₹${fmt(+e.amount)}</span></div>`).join('')}
-        ${!monthExp.length?'<div style="color:#94a3b8;font-size:.85rem;text-align:center;padding:12px">No expenses this month</div>':''}
+
+        <!-- Expenses -->
+        <div class="stat red" style="padding:20px;border-radius:14px;box-shadow:0 4px 12px rgba(220,38,38,0.15);border:1px solid rgba(239,68,68,0.2);transition:all .3s ease;cursor:default" onmouseover="this.style.boxShadow='0 8px 20px rgba(220,38,38,0.2)'" onmouseout="this.style.boxShadow='0 4px 12px rgba(220,38,38,0.15)'">
+          <div style="font-size:.75rem;opacity:.85;font-weight:500;letter-spacing:.5px;text-transform:uppercase">💸 Expenses</div>
+          <div style="font-size:2rem;font-weight:900;margin-top:8px;line-height:1">₹${fmt(expTotal)}</div>
+          <div style="font-size:.8rem;opacity:.8;margin-top:8px">${monthExp.length} transaction${monthExp.length!==1?'s':''}</div>
+          <div style="background:rgba(255,255,255,.15);border-radius:6px;padding:6px 8px;margin-top:10px;font-size:.75rem;text-align:center;font-weight:600">${monthExp.length>0?'Active':'No activity'}</div>
+        </div>
+
+        <!-- Bank Balance -->
+        <div class="stat blue" style="padding:20px;border-radius:14px;box-shadow:0 4px 12px rgba(30,64,175,0.15);border:1px solid rgba(59,130,246,0.2);transition:all .3s ease;cursor:default" onmouseover="this.style.boxShadow='0 8px 20px rgba(30,64,175,0.2)'" onmouseout="this.style.boxShadow='0 4px 12px rgba(30,64,175,0.15)'">
+          <div style="font-size:.75rem;opacity:.85;font-weight:500;letter-spacing:.5px;text-transform:uppercase">🏦 Bank Balance</div>
+          <div style="font-size:2rem;font-weight:900;margin-top:8px;line-height:1">₹${fmt(bankTotal)}</div>
+          <div style="font-size:.8rem;opacity:.8;margin-top:8px">${DB.banks.length} account${DB.banks.length!==1?'s':''}</div>
+          <div style="background:rgba(255,255,255,.15);border-radius:6px;padding:6px 8px;margin-top:10px;font-size:.75rem;text-align:center;font-weight:600">Liquid Assets</div>
+        </div>
+
+        <!-- FDs -->
+        <div class="stat teal" style="padding:20px;border-radius:14px;box-shadow:0 4px 12px rgba(15,118,110,0.15);border:1px solid rgba(20,184,166,0.2);transition:all .3s ease;cursor:default" onmouseover="this.style.boxShadow='0 8px 20px rgba(15,118,110,0.2)'" onmouseout="this.style.boxShadow='0 4px 12px rgba(15,118,110,0.15)'">
+          <div style="font-size:.75rem;opacity:.85;font-weight:500;letter-spacing:.5px;text-transform:uppercase">💎 Fixed Deposits</div>
+          <div style="font-size:2rem;font-weight:900;margin-top:8px;line-height:1">₹${fmt(fdTotal)}</div>
+          <div style="font-size:.8rem;opacity:.8;margin-top:8px">${openFDs.length} open FD${openFDs.length!==1?'s':''}</div>
+          <div style="background:rgba(255,255,255,.15);border-radius:6px;padding:6px 8px;margin-top:10px;font-size:.75rem;text-align:center;font-weight:600">Long-term Reserve</div>
+        </div>
+      </div>
+
+      <!-- ALERTS -->
+      ${fdAlert.length ? `<div style="background:linear-gradient(135deg,#fef3c7,#fde68a);border:1.5px solid #fcd34d;border-radius:10px;padding:14px 16px;margin-bottom:20px;display:flex;align-items:center;gap:12px;font-size:.9rem">
+        <span style="font-size:1.4rem">⏰</span>
+        <div>
+          <b style="color:#92400e">FDs Maturing Soon</b><br>
+          <span style="color:#b45309;font-size:.85rem">${fdAlert.length} fixed deposit${fdAlert.length!==1?'s':''} mature${fdAlert.length!==1?'':'s'} within 30 days. <button onclick="switchTab('fds')" style="background:none;border:none;color:#d97706;cursor:pointer;font-weight:600;text-decoration:underline;padding:0;font-size:.85rem">Review Now →</button></span>
+        </div>
+      </div>` : ''}
+
+      <!-- CONTENT SECTIONS -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;@media(max-width:900px){grid-template-columns:1fr}">
+
+        <!-- PENDING DUES CARD -->
+        <div class="card" style="border-radius:12px;border:1px solid #e2e8f0;box-shadow:0 2px 8px rgba(0,0,0,0.05);overflow:hidden">
+          <div style="padding:20px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:1.3rem">📋</span>
+              <div>
+                <div style="font-weight:700;font-size:.95rem;color:#1e40af">Pending Dues</div>
+                <div style="font-size:.75rem;color:#94a3b8;margin-top:2px">${pending.length} flat${pending.length!==1?'s':''}</div>
+              </div>
+            </div>
+            <button onclick="switchTab('maintenance')" style="background:none;border:none;color:#2563eb;cursor:pointer;font-size:.8rem;font-weight:600;text-decoration:underline;padding:4px 8px">View All →</button>
+          </div>
+          <div style="padding:12px 16px">
+            ${pending.length ? pending.slice(0,8).map(m2=>`
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f1f5f9;font-size:.85rem">
+                <div>
+                  <div style="font-weight:500;color:#1e293b">${m2.unitNo}</div>
+                  <div style="font-size:.75rem;color:#94a3b8">${m2.ownerName}</div>
+                </div>
+                <span class="badge-pending" style="padding:3px 10px">Pending</span>
+              </div>
+            `).join('') : ''}
+            ${pending.length>8?`<div style="color:#94a3b8;font-size:.8rem;margin-top:10px;padding:8px;text-align:center;background:#f8fafc;border-radius:6px">+${pending.length-8} more</div>`:''}
+            ${!pending.length?'<div style="color:#22c55e;font-size:.85rem;text-align:center;padding:16px;background:#f0fdf4;border-radius:6px;font-weight:500">✓ All flats paid this month!</div>':''}
+          </div>
+        </div>
+
+        <!-- RECENT EXPENSES CARD -->
+        <div class="card" style="border-radius:12px;border:1px solid #e2e8f0;box-shadow:0 2px 8px rgba(0,0,0,0.05);overflow:hidden">
+          <div style="padding:20px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:1.3rem">💼</span>
+              <div>
+                <div style="font-weight:700;font-size:.95rem;color:#1e40af">Recent Expenses</div>
+                <div style="font-size:.75rem;color:#94a3b8;margin-top:2px">${monthExp.length} transaction${monthExp.length!==1?'s':''}</div>
+              </div>
+            </div>
+            <button onclick="switchTab('expenses')" style="background:none;border:none;color:#2563eb;cursor:pointer;font-size:.8rem;font-weight:600;text-decoration:underline;padding:4px 8px">View All →</button>
+          </div>
+          <div style="padding:12px 16px">
+            ${monthExp.length ? monthExp.slice(-8).reverse().map(e=>`
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f1f5f9;font-size:.85rem">
+                <div>
+                  <div style="font-weight:500;color:#1e293b">${e.category}${e.subCategory?' — '+e.subCategory:''}</div>
+                  <div style="font-size:.75rem;color:#94a3b8">${new Date(e.date).toLocaleDateString()}</div>
+                </div>
+                <div style="font-weight:700;color:#dc2626">₹${fmt(+e.amount)}</div>
+              </div>
+            `).join('') : ''}
+            ${!monthExp.length?'<div style="color:#94a3b8;font-size:.85rem;text-align:center;padding:16px;background:#f8fafc;border-radius:6px;font-weight:500">No expenses recorded</div>':''}
+          </div>
+        </div>
       </div>
     </div>`;
 }
@@ -2097,6 +2197,7 @@ function showCommWorkModal() {
   document.getElementById('cwStartDate').value = toDateVal(new Date());
   document.getElementById('cwDueDate').value = '';
   document.getElementById('cwNotes').value = '';
+  document.getElementById('cwRecordedBy').value = 'Treasurer';
   document.getElementById('cwDeleteBtn').style.display = 'none';
   document.getElementById('mCommWorkTitle').textContent = '📌 Add Work Item';
   document.getElementById('mCommWork').style.display = 'flex';
@@ -2113,6 +2214,7 @@ function openEditCommWorkModal(id) {
   document.getElementById('cwStartDate').value = w.startDate || '';
   document.getElementById('cwDueDate').value = w.dueDate || '';
   document.getElementById('cwNotes').value = w.notes || '';
+  document.getElementById('cwRecordedBy').value = w.recordedBy || 'Treasurer';
   document.getElementById('cwDeleteBtn').style.display = 'inline-block';
   document.getElementById('mCommWorkTitle').textContent = '✏️ Edit Work Item';
   document.getElementById('mCommWork').style.display = 'flex';
@@ -2127,6 +2229,7 @@ async function saveCommWork() {
   const startDate = document.getElementById('cwStartDate').value;
   const dueDate = document.getElementById('cwDueDate').value;
   const notes = document.getElementById('cwNotes').value.trim();
+  const recordedBy = document.getElementById('cwRecordedBy').value;
 
   if (!text) { toast('Enter a description', 'red'); return; }
   if (!handler) { toast('Enter person(s) handling', 'red'); return; }
@@ -2136,9 +2239,9 @@ async function saveCommWork() {
 
   if (editId) {
     const w = DB.committee.workItems.find(x => x.id === editId);
-    if (w) { w.text = text; w.status = status; w.priority = priority; w.handler = handler; w.startDate = startDate; w.dueDate = dueDate; w.notes = notes; }
+    if (w) { w.text = text; w.status = status; w.priority = priority; w.handler = handler; w.startDate = startDate; w.dueDate = dueDate; w.notes = notes; w.recordedBy = recordedBy; }
   } else {
-    DB.committee.workItems.push({ id:'WORK'+Date.now(), text, status, priority, handler, startDate, dueDate, notes });
+    DB.committee.workItems.push({ id:'WORK'+Date.now(), text, status, priority, handler, startDate, dueDate, notes, recordedBy });
   }
   await persist(editId ? 'Work item updated' : 'Work item added');
   closeModal('mCommWork'); renderWork();
@@ -2214,6 +2317,7 @@ function showContactModal() {
   document.getElementById('conRole').value = '';
   document.getElementById('conPhone').value = '';
   document.getElementById('conNotes').value = '';
+  document.getElementById('conRecordedBy').value = 'Treasurer';
   document.getElementById('mContact').style.display = 'flex';
 }
 
@@ -2227,6 +2331,7 @@ function openEditContactModal(id) {
   document.getElementById('conRole').value = c.role || '';
   document.getElementById('conPhone').value = c.phone || '';
   document.getElementById('conNotes').value = c.notes || '';
+  document.getElementById('conRecordedBy').value = c.recordedBy || 'Treasurer';
   document.getElementById('mContact').style.display = 'flex';
 }
 
@@ -2237,14 +2342,15 @@ async function saveContact() {
   const role    = document.getElementById('conRole').value.trim();
   const phone   = document.getElementById('conPhone').value.trim();
   const notes   = document.getElementById('conNotes').value.trim();
+  const recordedBy = document.getElementById('conRecordedBy').value;
   if (!service) { toast('Service/Category is required', 'red'); return; }
   if (!name)    { toast('Name is required', 'red'); return; }
   if (!DB.contacts) DB.contacts = [];
   if (id) {
     const c = DB.contacts.find(x => x.id === id);
-    if (c) { c.service = service; c.name = name; c.role = role; c.phone = phone; c.notes = notes; }
+    if (c) { c.service = service; c.name = name; c.role = role; c.phone = phone; c.notes = notes; c.recordedBy = recordedBy; }
   } else {
-    DB.contacts.push({ id: uid('CON'), service, name, role, phone, notes });
+    DB.contacts.push({ id: uid('CON'), service, name, role, phone, notes, recordedBy });
   }
   await persist(id ? 'Contact updated ✓' : 'Contact added ✓');
   closeModal('mContact');
