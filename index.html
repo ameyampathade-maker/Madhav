@@ -720,9 +720,43 @@
     <input id="cwId" type="hidden">
     <label class="lbl">Work Item Description</label>
     <input id="cwText" type="text" placeholder="e.g. Security Management" style="margin-bottom:10px">
-    <label class="lbl">Tracking Notes</label>
-    <textarea id="cwNotes" rows="3" placeholder="Status, assigned to, action taken, next steps…" style="margin-bottom:10px;resize:vertical"></textarea>
+    <div class="grid2">
+      <div>
+        <label class="lbl">Status</label>
+        <select id="cwStatus" style="margin-bottom:10px">
+          <option value="Not Started">Not Started</option>
+          <option value="In Progress">In Progress</option>
+          <option value="On Hold">On Hold</option>
+          <option value="Blocked">Blocked</option>
+          <option value="Completed">Completed</option>
+        </select>
+      </div>
+      <div>
+        <label class="lbl">Priority</label>
+        <select id="cwPriority" style="margin-bottom:10px">
+          <option value="Low">Low</option>
+          <option value="Medium">Medium</option>
+          <option value="High">High</option>
+          <option value="Critical">Critical</option>
+        </select>
+      </div>
+    </div>
+    <label class="lbl">Person(s) Handling</label>
+    <input id="cwHandler" type="text" placeholder="e.g. Mukund Soman, Kaustubh Kulkarni" style="margin-bottom:10px">
+    <div class="grid2">
+      <div>
+        <label class="lbl">Start Date</label>
+        <input id="cwStartDate" type="date" style="margin-bottom:10px">
+      </div>
+      <div>
+        <label class="lbl">Due Date</label>
+        <input id="cwDueDate" type="date" style="margin-bottom:10px">
+      </div>
+    </div>
+    <label class="lbl">Tracking Notes / Comments</label>
+    <textarea id="cwNotes" rows="3" placeholder="Status updates, action taken, next steps, blockers…" style="margin-bottom:10px;resize:vertical"></textarea>
     <div style="display:flex;gap:8px;margin-top:6px">
+      <button class="btn btn-danger rw" id="cwDeleteBtn" onclick="delCommWork(document.getElementById('cwId').value)" style="display:none;margin-right:auto;padding:5px 12px;font-size:.78rem">Delete</button>
       <button class="btn btn-primary" onclick="saveCommWork()">Save</button>
       <button class="btn btn-secondary" onclick="closeModal('mCommWork')">Cancel</button>
     </div>
@@ -2014,7 +2048,13 @@ async function delCommResp(id) {
 function showCommWorkModal() {
   document.getElementById('cwId').value = '';
   document.getElementById('cwText').value = '';
+  document.getElementById('cwStatus').value = 'Not Started';
+  document.getElementById('cwPriority').value = 'Medium';
+  document.getElementById('cwHandler').value = '';
+  document.getElementById('cwStartDate').value = toDateVal(new Date());
+  document.getElementById('cwDueDate').value = '';
   document.getElementById('cwNotes').value = '';
+  document.getElementById('cwDeleteBtn').style.display = 'none';
   document.getElementById('mCommWorkTitle').textContent = '📌 Add Work Item';
   document.getElementById('mCommWork').style.display = 'flex';
 }
@@ -2024,26 +2064,41 @@ function openEditCommWorkModal(id) {
   if (!w) return;
   document.getElementById('cwId').value = w.id;
   document.getElementById('cwText').value = w.text;
+  document.getElementById('cwStatus').value = w.status || 'Not Started';
+  document.getElementById('cwPriority').value = w.priority || 'Medium';
+  document.getElementById('cwHandler').value = w.handler || '';
+  document.getElementById('cwStartDate').value = w.startDate || '';
+  document.getElementById('cwDueDate').value = w.dueDate || '';
   document.getElementById('cwNotes').value = w.notes || '';
+  document.getElementById('cwDeleteBtn').style.display = 'inline-block';
   document.getElementById('mCommWorkTitle').textContent = '✏️ Edit Work Item';
   document.getElementById('mCommWork').style.display = 'flex';
 }
 
 async function saveCommWork() {
   const editId = document.getElementById('cwId').value.trim();
-  const text   = document.getElementById('cwText').value.trim();
-  const notes  = document.getElementById('cwNotes').value.trim();
+  const text = document.getElementById('cwText').value.trim();
+  const status = document.getElementById('cwStatus').value;
+  const priority = document.getElementById('cwPriority').value;
+  const handler = document.getElementById('cwHandler').value.trim();
+  const startDate = document.getElementById('cwStartDate').value;
+  const dueDate = document.getElementById('cwDueDate').value;
+  const notes = document.getElementById('cwNotes').value.trim();
+
   if (!text) { toast('Enter a description', 'red'); return; }
+  if (!handler) { toast('Enter person(s) handling', 'red'); return; }
+
   if (!DB.committee) DB.committee = { members:[], responsibilities:[], workItems:[] };
   if (!DB.committee.workItems) DB.committee.workItems = [];
+
   if (editId) {
     const w = DB.committee.workItems.find(x => x.id === editId);
-    if (w) { w.text = text; w.notes = notes; }
+    if (w) { w.text = text; w.status = status; w.priority = priority; w.handler = handler; w.startDate = startDate; w.dueDate = dueDate; w.notes = notes; }
   } else {
-    DB.committee.workItems.push({ id:'WORK'+Date.now(), text, notes });
+    DB.committee.workItems.push({ id:'WORK'+Date.now(), text, status, priority, handler, startDate, dueDate, notes });
   }
   await persist(editId ? 'Work item updated' : 'Work item added');
-  closeModal('mCommWork'); renderCommittee();
+  closeModal('mCommWork'); renderWork();
 }
 
 async function delCommWork(id) {
@@ -2169,17 +2224,35 @@ function renderWork() {
   if (!works.length) {
     workList.innerHTML = '<div style="color:#6b7280;font-style:italic;padding:10px">No work items added. Use Load Audit Data or + Add Item.</div>';
   } else {
-    workList.innerHTML = works.map((w, i) => `
-      <div class="card" style="padding:12px 16px">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
-          <div style="font-size:.9rem;font-weight:600"><span style="color:#6b7280;margin-right:8px">${String.fromCharCode(96+i+1)}.</span>${h(w.text)}</div>
-          <div style="display:flex;gap:6px;flex-shrink:0">
-            <button class="btn btn-secondary rw" style="padding:2px 8px;font-size:.78rem" onclick="openEditCommWorkModal('${w.id}')">✎</button>
-            <button class="btn btn-danger rw" style="padding:2px 8px;font-size:.78rem" onclick="delCommWork('${w.id}')">✕</button>
+    workList.innerHTML = works.map((w, i) => {
+      const statusColor = { 'Not Started':'#6b7280', 'In Progress':'#f59e0b', 'On Hold':'#f59e0b', 'Blocked':'#dc2626', 'Completed':'#22c55e' }[w.status] || '#6b7280';
+      const priorityColor = { 'Critical':'#dc2626', 'High':'#f97316', 'Medium':'#eab308', 'Low':'#6b7280' }[w.priority] || '#6b7280';
+      const daysLeft = w.dueDate ? Math.ceil((new Date(w.dueDate) - new Date()) / (1000*3600*24)) : null;
+      const dueTxt = daysLeft !== null ? (daysLeft < 0 ? `${Math.abs(daysLeft)} days overdue` : `${daysLeft} days left`) : 'No due date';
+      const dueStyle = daysLeft && daysLeft < 0 ? 'color:#dc2626;font-weight:600' : daysLeft && daysLeft <= 7 ? 'color:#f97316' : '';
+
+      return `
+        <div class="card" style="padding:12px 16px;border-left:4px solid ${statusColor}">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px">
+            <div>
+              <div style="font-size:.9rem;font-weight:600"><span style="color:#6b7280;margin-right:8px">${String.fromCharCode(96+i+1)}.</span>${h(w.text)}</div>
+              <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">
+                <span class="badge-paid" style="background:${statusColor}20;color:${statusColor};border-radius:4px;padding:2px 8px;font-size:.75rem;font-weight:600">● ${w.status || 'Not Started'}</span>
+                <span style="background:${priorityColor}20;color:${priorityColor};border-radius:4px;padding:2px 8px;font-size:.75rem;font-weight:600">📌 ${w.priority || 'Medium'}</span>
+              </div>
+            </div>
+            <div style="display:flex;gap:6px;flex-shrink:0">
+              <button class="btn btn-secondary rw" style="padding:2px 8px;font-size:.78rem" onclick="openEditCommWorkModal('${w.id}')">✎</button>
+              <button class="btn btn-danger rw" style="padding:2px 8px;font-size:.78rem" onclick="delCommWork('${w.id}')">✕</button>
+            </div>
           </div>
-        </div>
-        ${w.notes ? `<div style="margin-top:6px;font-size:.82rem;color:#374151;background:#f9fafb;border-left:3px solid #6366f1;padding:6px 10px;border-radius:0 4px 4px 0;white-space:pre-wrap">${h(w.notes)}</div>` : '<div style="margin-top:4px;font-size:.78rem;color:#9ca3af;font-style:italic">No tracking notes yet — click ✎ to add</div>'}
-      </div>`).join('');
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.8rem;color:#374151;margin-bottom:8px">
+            <div><strong>👤 Handler:</strong> ${h(w.handler) || '—'}</div>
+            <div><strong>📅 Due:</strong> <span style="${dueStyle}">${w.dueDate ? w.dueDate : '—'}</span></div>
+          </div>
+          ${w.notes ? `<div style="margin-top:6px;font-size:.82rem;color:#374151;background:#f9fafb;border-left:3px solid #6366f1;padding:6px 10px;border-radius:0 4px 4px 0;white-space:pre-wrap">${h(w.notes)}</div>` : '<div style="margin-top:4px;font-size:.78rem;color:#9ca3af;font-style:italic">No notes added — click ✎ to add</div>'}
+        </div>`;
+    }).join('');
   }
 }
 
