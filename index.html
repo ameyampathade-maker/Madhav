@@ -335,28 +335,30 @@
     <h3 style="font-weight:700;font-size:1.05rem;margin-bottom:4px">⚙️ App Setup</h3>
     <p style="font-size:.82rem;color:#64748b;margin-bottom:16px">One-time setup using JSONBin.io (free). Takes 2 minutes.</p>
 
-    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px;margin-bottom:16px;font-size:.82rem;line-height:1.6">
-      <b>How to get the API Key:</b><br>
-      1. Go to <b>jsonbin.io</b> → Sign Up (free)<br>
-      2. Click your name (top-right) → <b>API Keys</b><br>
-      3. Copy the <b>Master Key</b> (starts with $2b$…)<br>
-      4. Paste it below and click <b>Create My Data Bin</b>
-    </div>
+    <div class="rw" style="display:block">
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px;margin-bottom:16px;font-size:.82rem;line-height:1.6">
+        <b>How to get the API Key:</b><br>
+        1. Go to <b>jsonbin.io</b> → Sign Up (free)<br>
+        2. Click your name (top-right) → <b>API Keys</b><br>
+        3. Copy the <b>Master Key</b> (starts with $2b$…)<br>
+        4. Paste it below and click <b>Create My Data Bin</b>
+      </div>
 
-    <label class="lbl">Master Key (from jsonbin.io)</label>
-    <input type="text" id="apiKeyInput" placeholder="$2a$10$ or $2b$10$..." style="margin-bottom:10px;font-family:monospace;font-size:.8rem">
+      <label class="lbl">Master Key (from jsonbin.io)</label>
+      <input type="text" id="apiKeyInput" placeholder="$2a$10$ or $2b$10$..." style="margin-bottom:10px;font-family:monospace;font-size:.8rem">
 
-    <div id="binIdRow" style="display:none;margin-bottom:10px">
-      <label class="lbl">Bin ID <span style="font-weight:400;color:#64748b">(auto-created — share this with others)</span></label>
-      <input type="text" id="binIdInput" placeholder="auto-filled" style="font-family:monospace;font-size:.8rem">
-    </div>
+      <div id="binIdRow" style="display:none;margin-bottom:10px">
+        <label class="lbl">Bin ID <span style="font-weight:400;color:#64748b">(auto-created — share this with others)</span></label>
+        <input type="text" id="binIdInput" placeholder="auto-filled" style="font-family:monospace;font-size:.8rem">
+      </div>
 
-    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-      <button class="btn btn-primary" onclick="setupNewBin()">Create My Data Bin</button>
-      <button class="btn btn-secondary" onclick="connectExisting()">Connect Existing Bin</button>
-      <button class="btn btn-secondary" onclick="closeModal('mSettings')">Cancel</button>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="setupNewBin()">Create My Data Bin</button>
+        <button class="btn btn-secondary" onclick="connectExisting()">Connect Existing Bin</button>
+        <button class="btn btn-secondary" onclick="closeModal('mSettings')">Cancel</button>
+      </div>
+      <div id="setupStatus" style="margin-top:10px;font-size:.83rem"></div>
     </div>
-    <div id="setupStatus" style="margin-top:10px;font-size:.83rem"></div>
 
     <hr style="margin:16px 0;border-color:#e2e8f0">
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px;margin-bottom:10px;font-size:.82rem">
