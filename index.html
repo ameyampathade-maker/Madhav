@@ -1824,9 +1824,9 @@ function renderMaintenance() {
         const exp   = Number(mb.monthlyMaintenance)||0;
         const paid  = paidMap[mb.unitNo]||0;
         const prior = Number(mb.openingDue)||0;
-        const badge = paid<=0 ? '<span class="badge-pending">Pending</span>'
+        const badge = prior > 0 ? '<span class="badge-pending">Pending</span>'
           : paid>=exp ? '<span class="badge-paid">Paid ✓</span>'
-          : `<span class="badge-pending">Partial</span>`;
+          : '<span class="badge-pending">Pending</span>';
         const editPBtn = `<button class="rw" style="background:none;border:none;cursor:pointer;font-size:.78rem;color:#94a3b8;padding:0 0 0 4px" title="Edit prior due" onclick='openEditPriorDueModal("${esc(mb.unitNo)}",${prior})'>✎</button>`;
         const priorCell = prior>0
           ? `<td style="color:#dc2626;font-weight:600;font-size:.82rem">₹${fmt(prior)} ${editPBtn}</td>`
