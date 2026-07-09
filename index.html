@@ -293,17 +293,13 @@
   <div id="sec-work" class="section">
     <div class="card" style="margin-bottom:14px">
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <h2 style="margin:0;font-size:1.05rem;font-weight:700">⚙ Work Tracker</h2>
-        <button class="btn btn-primary rw" onclick="showWorkModal()" style="margin-left:auto">+ Add Work Item</button>
+        <h2 style="margin:0;font-size:1.05rem;font-weight:700">📌 Regular / Non-Regular Work Items</h2>
+        <span style="font-size:.78rem;color:#6b7280;font-style:italic">(not exhaustive)</span>
+        <button class="btn btn-primary rw" onclick="showCommWorkModal()" style="margin-left:auto">+ Add Item</button>
         <button class="btn btn-secondary" onclick="loadFromBin(true)" style="font-size:.82rem">🔄</button>
       </div>
     </div>
-
-    <!-- Work Summary Stats -->
-    <div id="workSummary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px"></div>
-
-    <!-- Work by Status - Kanban Style -->
-    <div id="workContainer" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px"></div>
+    <div id="commWorkList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px"></div>
   </div>
 
   <div id="sec-contacts" class="section">
@@ -773,39 +769,6 @@
   </div>
 </div>
 
-<!-- Work Modal -->
-<div id="mWork" class="modal-overlay" style="display:none">
-  <div class="modal-box">
-    <h3 id="mWorkTitle" style="font-weight:700;font-size:1.05rem;margin-bottom:14px">⚙ Add Work Item</h3>
-    <input id="wId" type="hidden">
-    <label class="lbl">Title</label>
-    <input id="wTitle" type="text" placeholder="e.g. Repair terrace water leakage" style="margin-bottom:10px">
-    <label class="lbl">Description</label>
-    <textarea id="wDesc" rows="2" placeholder="Detailed description of the work…" style="margin-bottom:10px"></textarea>
-    <label class="lbl">Handler / Person Assigned</label>
-    <input id="wHandler" type="text" placeholder="Name of person handling this work" style="margin-bottom:10px">
-    <label class="lbl">Status</label>
-    <select id="wStatus" style="margin-bottom:10px">
-      <option value="Not Started">Not Started</option>
-      <option value="In Progress">In Progress</option>
-      <option value="On Hold">On Hold</option>
-      <option value="Blocked">Blocked</option>
-      <option value="Completed">Completed</option>
-    </select>
-    <label class="lbl">Start Date</label>
-    <input id="wStartDate" type="date" style="margin-bottom:10px">
-    <label class="lbl">Due Date</label>
-    <input id="wDueDate" type="date" style="margin-bottom:10px">
-    <label class="lbl">Notes / Comments</label>
-    <textarea id="wNotes" rows="2" placeholder="Additional notes…" style="margin-bottom:10px"></textarea>
-    <div style="display:flex;gap:8px;justify-content:flex-end">
-      <button class="btn btn-secondary" onclick="closeModal('mWork')">Cancel</button>
-      <button class="btn btn-danger rw" id="wDeleteBtn" onclick="deleteWork()" style="display:none;margin-right:auto">Delete</button>
-      <button class="btn btn-primary" onclick="saveWork()">Save Work Item</button>
-    </div>
-  </div>
-</div>
-
 <script>
 // ─────────────────────────────────────────────────────────────────
 // CONFIG
@@ -832,7 +795,7 @@ function roleName(r) { return ROLE_NAMES[r] || r || '—'; }
 const now    = new Date();
 
 // Local data cache (loaded once, updated on writes)
-let DB = { members:[], payments:[], expenses:[], fds:[], banks:[], notes:[], income:[], funds:[], assets:[], committee:{ members:[], responsibilities:[] }, contacts:[], work:[] };
+let DB = { members:[], payments:[], expenses:[], fds:[], banks:[], notes:[], income:[], funds:[], assets:[], committee:{ members:[], responsibilities:[], workItems:[] }, contacts:[] };
 
 const EXP_SUBS = {
   'Maintenance':    ['Electricity Bill','Generator AMC','Housekeeping Expenses','Water Pump Expenses','Plumbing Expenses','Diesel Expenses','General Expenses','PMC Garbage Expenses','Electrical Repairs & Maintenance','Lift AMC','Water Tank Expenses','Fabrication & Civil Work','Repair & Maintenance - Lift','Account Writing Charges','Repair & Maintenance - Motor Pump','General Repairs & Maintenance','Water Tank Cleaning','Society Grill Work','Repair & Maintenance - Glass Work'],
@@ -903,7 +866,7 @@ async function createBin(name) {
   const r = await fetch(`${JSONBIN_BASE}/b`, {
     method: 'POST',
     headers: { 'X-Master-Key': API_KEY, 'Content-Type': 'application/json', 'X-Bin-Name': name, 'X-Bin-Private': 'true' },
-    body: JSON.stringify({ members:[], payments:[], expenses:[], fds:[], banks:[], notes:[], income:[], funds:[], assets:[], committee:{ members:[], responsibilities:[] }, contacts:[], work:[] })
+    body: JSON.stringify({ members:[], payments:[], expenses:[], fds:[], banks:[], notes:[], income:[], funds:[], assets:[], committee:{ members:[], responsibilities:[], workItems:[] }, contacts:[] })
   });
   if (!r.ok) throw new Error(`Create failed: ${r.status}`);
   const j = await r.json();
@@ -2200,129 +2163,25 @@ async function delContact(id) {
 // WORK TRACKER
 // ─────────────────────────────────────────────────────────────────
 function renderWork() {
-  if (!DB.work) DB.work = [];
-
-  // Summary stats
-  const notStarted = DB.work.filter(w => w.status === 'Not Started').length;
-  const inProgress = DB.work.filter(w => w.status === 'In Progress').length;
-  const onHold = DB.work.filter(w => w.status === 'On Hold').length;
-  const blocked = DB.work.filter(w => w.status === 'Blocked').length;
-  const completed = DB.work.filter(w => w.status === 'Completed').length;
-
-  let summaryHtml = `
-    <div class="stat blue"><strong>${notStarted}</strong><br><small>Not Started</small></div>
-    <div class="stat orange"><strong>${inProgress}</strong><br><small>In Progress</small></div>
-    <div class="stat red"><strong>${blocked}</strong><br><small>Blocked</small></div>
-    <div class="stat orange" style="background:linear-gradient(135deg,#b45309,#f59e0b)"><strong>${onHold}</strong><br><small>On Hold</small></div>
-    <div class="stat green"><strong>${completed}</strong><br><small>Completed</small></div>
-  `;
-  document.getElementById('workSummary').innerHTML = summaryHtml;
-
-  // Group by status
-  const statuses = ['Not Started', 'In Progress', 'On Hold', 'Blocked', 'Completed'];
-  let containerHtml = '';
-
-  statuses.forEach(status => {
-    const items = DB.work.filter(w => w.status === status);
-    const badgeColor = status === 'Completed' ? '#22c55e' : status === 'In Progress' ? '#f59e0b' : status === 'Blocked' ? '#dc2626' : status === 'On Hold' ? '#f59e0b' : '#6b7280';
-
-    containerHtml += `
-      <div class="card" style="background:#f8fafc">
-        <h3 style="margin:0 0 12px 0;font-size:.95rem;font-weight:700;color:${badgeColor}">● ${status} (${items.length})</h3>
-        <div style="display:flex;flex-direction:column;gap:10px">
-    `;
-
-    items.forEach(w => {
-      const daysLeft = w.dueDate ? Math.ceil((new Date(w.dueDate) - new Date()) / (1000*3600*24)) : null;
-      const dueClass = daysLeft && daysLeft < 0 ? 'color:#dc2626;font-weight:600' : '';
-      const dueTxt = w.dueDate ? (daysLeft < 0 ? `${Math.abs(daysLeft)} days overdue` : `${daysLeft} days left`) : '';
-
-      containerHtml += `
-        <div style="background:#fff;padding:10px;border-radius:8px;border-left:4px solid ${badgeColor};cursor:pointer" onclick="openEditWorkModal('${w.id}')">
-          <strong style="font-size:.9rem">${w.title || 'Untitled'}</strong><br>
-          <small style="color:#6b7280;display:block;margin:4px 0">👤 ${w.handler || '(unassigned)'}</small>
-          ${w.desc ? `<small style="color:#6b7280">${w.desc.substring(0, 60)}${w.desc.length > 60 ? '...' : ''}</small><br>` : ''}
-          ${w.dueDate ? `<small style="${dueClass}">${dueTxt}</small>` : ''}
-        </div>
-      `;
-    });
-
-    if (items.length === 0) {
-      containerHtml += `<small style="color:#9ca3af;font-style:italic">No items</small>`;
-    }
-
-    containerHtml += `</div></div>`;
-  });
-
-  document.getElementById('workContainer').innerHTML = containerHtml;
-}
-
-function showWorkModal() {
-  document.getElementById('mWorkTitle').textContent = '⚙ Add Work Item';
-  document.getElementById('wId').value = '';
-  document.getElementById('wTitle').value = '';
-  document.getElementById('wDesc').value = '';
-  document.getElementById('wHandler').value = '';
-  document.getElementById('wStatus').value = 'Not Started';
-  document.getElementById('wStartDate').value = toDateVal(new Date());
-  document.getElementById('wDueDate').value = '';
-  document.getElementById('wNotes').value = '';
-  document.getElementById('wDeleteBtn').style.display = 'none';
-  document.getElementById('mWork').style.display = 'flex';
-}
-
-function openEditWorkModal(id) {
-  const w = (DB.work || []).find(x => x.id === id);
-  if (!w) return;
-  document.getElementById('mWorkTitle').textContent = '✎ Edit Work Item';
-  document.getElementById('wId').value = w.id;
-  document.getElementById('wTitle').value = w.title || '';
-  document.getElementById('wDesc').value = w.desc || '';
-  document.getElementById('wHandler').value = w.handler || '';
-  document.getElementById('wStatus').value = w.status || 'Not Started';
-  document.getElementById('wStartDate').value = w.startDate || '';
-  document.getElementById('wDueDate').value = w.dueDate || '';
-  document.getElementById('wNotes').value = w.notes || '';
-  document.getElementById('wDeleteBtn').style.display = 'inline-block';
-  document.getElementById('mWork').style.display = 'flex';
-}
-
-async function saveWork() {
-  const id = document.getElementById('wId').value;
-  const title = document.getElementById('wTitle').value.trim();
-  const desc = document.getElementById('wDesc').value.trim();
-  const handler = document.getElementById('wHandler').value.trim();
-  const status = document.getElementById('wStatus').value;
-  const startDate = document.getElementById('wStartDate').value;
-  const dueDate = document.getElementById('wDueDate').value;
-  const notes = document.getElementById('wNotes').value.trim();
-
-  if (!title) { toast('Title is required', 'red'); return; }
-  if (!handler) { toast('Handler/Assignee is required', 'red'); return; }
-
-  if (!DB.work) DB.work = [];
-
-  if (id) {
-    const w = DB.work.find(x => x.id === id);
-    if (w) { w.title = title; w.desc = desc; w.handler = handler; w.status = status; w.startDate = startDate; w.dueDate = dueDate; w.notes = notes; }
+  const workList = document.getElementById('commWorkList');
+  const works = DB.committee?.workItems || [];
+  if (!works.length) {
+    workList.innerHTML = '<div style="color:#6b7280;font-style:italic;padding:10px">No work items added. Use Load Audit Data or + Add Item.</div>';
   } else {
-    DB.work.push({ id: uid('WRK'), title, desc, handler, status, startDate, dueDate, notes, createdBy: currentRole, createdDate: toDateVal(new Date()) });
+    workList.innerHTML = works.map((w, i) => `
+      <div class="card" style="padding:12px 16px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+          <div style="font-size:.9rem;font-weight:600"><span style="color:#6b7280;margin-right:8px">${String.fromCharCode(96+i+1)}.</span>${h(w.text)}</div>
+          <div style="display:flex;gap:6px;flex-shrink:0">
+            <button class="btn btn-secondary rw" style="padding:2px 8px;font-size:.78rem" onclick="openEditCommWorkModal('${w.id}')">✎</button>
+            <button class="btn btn-danger rw" style="padding:2px 8px;font-size:.78rem" onclick="delCommWork('${w.id}')">✕</button>
+          </div>
+        </div>
+        ${w.notes ? `<div style="margin-top:6px;font-size:.82rem;color:#374151;background:#f9fafb;border-left:3px solid #6366f1;padding:6px 10px;border-radius:0 4px 4px 0;white-space:pre-wrap">${h(w.notes)}</div>` : '<div style="margin-top:4px;font-size:.78rem;color:#9ca3af;font-style:italic">No tracking notes yet — click ✎ to add</div>'}
+      </div>`).join('');
   }
-
-  await persist(id ? 'Work item updated ✓' : 'Work item added ✓');
-  closeModal('mWork');
-  renderWork();
 }
 
-async function deleteWork() {
-  if (!confirm('Delete this work item?')) return;
-  const id = document.getElementById('wId').value;
-  if (!id) return;
-  DB.work = (DB.work || []).filter(w => w.id !== id);
-  await persist('Work item deleted');
-  closeModal('mWork');
-  renderWork();
-}
 
 // ─────────────────────────────────────────────────────────────────
 // BACKUP & RESTORE
