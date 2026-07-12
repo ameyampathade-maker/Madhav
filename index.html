@@ -1443,15 +1443,15 @@ function exportExpensesToExcel() {
   // CSV Data
   const rows = expenses.map(e => [
     fmtDate(e.date),
-    e.category || '—',
-    e.subCategory || '—',
-    e.vendor || '—',
-    e.mode || '—',
+    e.category || '',
+    e.subCategory || '',
+    e.vendor || '',
+    e.mode || '',
     e.amount || 0,
-    e.status || '—',
-    e.paidBy || '—',
-    (e.notes || '—').replace(/"/g, '""'),
-    e.recordedBy || '—'
+    e.status || '',
+    e.paidBy || '',
+    (e.notes || '').replace(/"/g, '""'),
+    e.recordedBy || ''
   ]);
 
   // Combine
