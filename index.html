@@ -130,6 +130,7 @@
         <select id="expYear" onchange="renderExpenses()" style="width:88px"></select>
         <select id="expCatFilter" onchange="renderExpenses()" style="width:150px;max-width:100%"><option value="">All Categories</option></select>
         <button class="btn btn-primary rw" onclick="showExpenseModal()">+ Add Expense</button>
+        <button class="btn btn-secondary" onclick="exportExpensesToExcel()" style="font-size:.82rem;background:#10b981;color:#fff">⬇ Export Excel</button>
         <button class="btn btn-secondary" onclick="loadFromBin(true)" style="margin-left:auto;font-size:.82rem">🔄</button>
       </div>
     </div>
@@ -1419,6 +1420,57 @@ function updateSubCats() {
   const cat=document.getElementById('exCat').value;
   document.getElementById('exSub').innerHTML='<option value="">—</option>'+(EXP_SUBS[cat]||[]).map(s=>`<option>${s}</option>`).join('');
 }
+
+function exportExpensesToExcel() {
+  const m = +document.getElementById('expMonth').value;
+  const y = +document.getElementById('expYear').value;
+  const catFilter = document.getElementById('expCatFilter').value;
+
+  let expenses = DB.expenses.filter(e => {
+    const d = new Date(e.date);
+    return d.getMonth()+1 === m && d.getFullYear() === y;
+  });
+
+  if (catFilter) {
+    expenses = expenses.filter(e => e.category === catFilter);
+  }
+
+  expenses.sort((a,b) => new Date(b.date) - new Date(a.date));
+
+  // CSV Header
+  const headers = ['Date', 'Category', 'Sub-Category', 'Vendor', 'Mode', 'Amount (₹)', 'Status', 'Paid By', 'Notes', 'Added By'];
+
+  // CSV Data
+  const rows = expenses.map(e => [
+    fmtDate(e.date),
+    e.category || '—',
+    e.subCategory || '—',
+    e.vendor || '—',
+    e.mode || '—',
+    e.amount || 0,
+    e.status || '—',
+    e.paidBy || '—',
+    (e.notes || '—').replace(/"/g, '""'),
+    e.recordedBy || '—'
+  ]);
+
+  // Combine
+  const csv = [
+    headers.map(h => `"${h}"`).join(','),
+    ...rows.map(r => r.map(v => `"${v}"`).join(','))
+  ].join('\n');
+
+  // Download
+  const filename = `Madhav_Expenses_${MONTHS[m]}_${y}.csv`;
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  link.click();
+
+  toast(`✓ Exported ${expenses.length} expenses to ${filename}`, 'green');
+}
+
 async function saveExpense() {
   const date=document.getElementById('exDate').value, cat=document.getElementById('exCat').value, amt=document.getElementById('exAmt').value;
   if(!date||!cat||!amt){toast('Date, Category, Amount required','red');return;}
