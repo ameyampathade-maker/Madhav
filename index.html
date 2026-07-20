@@ -2502,12 +2502,6 @@ function renderBeneficiary() {
   const tbody = document.getElementById('beneficiaryTbody');
   const summary = document.getElementById('beneficiarySummary');
 
-  if (!BENEFICIARY_BIN_ID || !BENEFICIARY_API_KEY) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#6b7280;padding:32px"><div>Beneficiary management not configured.</div><div style="margin-top:8px;font-size:.85rem"><button onclick="showSettings()" style="background:none;border:none;color:#2563eb;cursor:pointer;font-weight:600;text-decoration:underline">Click here to set up</button> in ⚙ Settings</div></td></tr>';
-    summary.innerHTML = '';
-    return;
-  }
-
   if (!beneficiaryData || beneficiaryData.length === 0) {
     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#6b7280;padding:32px">No beneficiary records found. Click 🔄 Refresh to load data.</td></tr>';
     summary.innerHTML = '';
